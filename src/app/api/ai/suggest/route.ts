@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateSuggestions } from "@/lib/ai";
 import { getCachedSchema, getCachedSuggestions, setCachedSuggestions } from "@/lib/cache";
+import { apiError } from "@/lib/api-utils";
 
 export async function POST(req: NextRequest) {
   const refresh = (await req.json().catch(() => ({}))).refresh === true;
@@ -26,6 +27,6 @@ export async function POST(req: NextRequest) {
     setCachedSuggestions(suggestions);
     return NextResponse.json(suggestions);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return apiError(e);
   }
 }

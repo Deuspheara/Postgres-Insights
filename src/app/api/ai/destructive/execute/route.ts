@@ -3,6 +3,7 @@ import { withClient } from "@/lib/db";
 import { getSafetyConfig } from "@/lib/settings";
 import { z } from "zod";
 import type { DestructiveExecutionResult } from "@/types";
+import { apiError } from "@/lib/api-utils";
 
 const schema = z.object({
   plan: z.object({
@@ -99,6 +100,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return apiError(e);
   }
 }

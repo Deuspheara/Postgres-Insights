@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Search, Zap, Clock, HelpCircle, Database } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 export function Topbar() {
   const { data: settings } = useQuery({

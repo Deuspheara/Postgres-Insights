@@ -1,5 +1,7 @@
+import { apiError } from "@/lib/api-utils";
 import { NextResponse } from "next/server";
 import { loadSettings, saveSettings } from "@/lib/settings";
+import { SENTINEL_API_KEY } from "@/types";
 import { z } from "zod";
 import { NextRequest } from "next/server";
 
@@ -11,8 +13,8 @@ export async function GET() {
     connection: settings.connection
       ? {
           ...settings.connection,
-          connectionString: settings.connection.connectionString ? "***configured***" : null,
-          openRouterApiKey: settings.connection.openRouterApiKey ? "***configured***" : undefined,
+          connectionString: settings.connection.connectionString ? SENTINEL_API_KEY : null,
+          openRouterApiKey: settings.connection.openRouterApiKey ? SENTINEL_API_KEY : undefined,
         }
       : null,
   };
@@ -57,6 +59,6 @@ export async function PATCH(req: NextRequest) {
     saveSettings(settings);
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    return apiError(e, 400);
   }
 }

@@ -17,10 +17,6 @@ import {
   RefreshCw,
   ArrowLeft,
   BarChart3,
-  Hash,
-  Table2,
-  TrendingUp,
-  PieChart,
   Sparkles,
 } from "lucide-react";
 import { ChartTile } from "@/components/charts/chart-tile";
@@ -29,84 +25,7 @@ import { EditTileDialog } from "@/components/dashboards/edit-tile-dialog";
 import type { Dashboard, DashboardTile, ChartType } from "@/types";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-// ─── Chart type catalogue ─────────────────────────────────────────────────────
-const CHART_TYPES: {
-  value: ChartType;
-  label: string;
-  icon: React.ElementType;
-  desc: string;
-  sqlHint: string;
-  defaultW: number;
-}[] = [
-  {
-    value: "kpi",
-    label: "KPI",
-    icon: Hash,
-    desc: "Single big metric, optional sparkline",
-    sqlHint: "SELECT COUNT(*) AS total_records\nFROM your_table",
-    defaultW: 3,
-  },
-  {
-    value: "line",
-    label: "Line",
-    icon: TrendingUp,
-    desc: "Trend over time",
-    sqlHint:
-      "SELECT date_trunc('day', created_at) AS day,\n       COUNT(*) AS events\nFROM your_table\nGROUP BY 1\nORDER BY 1 DESC\nLIMIT 60",
-    defaultW: 6,
-  },
-  {
-    value: "bar",
-    label: "Bar",
-    icon: BarChart3,
-    desc: "Compare categories",
-    sqlHint:
-      "SELECT category,\n       COUNT(*) AS count\nFROM your_table\nGROUP BY 1\nORDER BY 2 DESC\nLIMIT 15",
-    defaultW: 6,
-  },
-  {
-    value: "area",
-    label: "Area",
-    icon: TrendingUp,
-    desc: "Volume / cumulative over time",
-    sqlHint:
-      "SELECT date_trunc('week', created_at) AS week,\n       SUM(amount) AS revenue\nFROM your_table\nGROUP BY 1\nORDER BY 1",
-    defaultW: 8,
-  },
-  {
-    value: "stacked-bar",
-    label: "Stacked",
-    icon: BarChart3,
-    desc: "Multi-series stacked bars",
-    sqlHint:
-      "SELECT month, category,\n       COUNT(*) AS count\nFROM your_table\nGROUP BY 1, 2\nORDER BY 1",
-    defaultW: 6,
-  },
-  {
-    value: "donut",
-    label: "Donut",
-    icon: PieChart,
-    desc: "Part-to-whole breakdown",
-    sqlHint:
-      "SELECT status,\n       COUNT(*) AS count\nFROM your_table\nGROUP BY 1\nORDER BY 2 DESC",
-    defaultW: 4,
-  },
-  {
-    value: "table",
-    label: "Table",
-    icon: Table2,
-    desc: "Raw data grid",
-    sqlHint: "SELECT *\nFROM your_table\nORDER BY created_at DESC\nLIMIT 50",
-    defaultW: 12,
-  },
-];
-
-function tileMinHeight(chartType: ChartType): number {
-  if (chartType === "kpi") return 176;
-  if (chartType === "table") return 340;
-  return 280;
-}
+import { CHART_TYPES, tileMinHeight } from "@/lib/chart-constants";
 
 // ─── Add-tile dialog ──────────────────────────────────────────────────────────
 function AddTileDialog({
@@ -121,27 +40,27 @@ function AddTileDialog({
   const defaultType = CHART_TYPES[1]; // line
   const [title, setTitle] = useState("");
   const [chartType, setChartType] = useState<ChartType>(defaultType.value);
-  const [sql, setSql] = useState(defaultType.sqlHint);
+  const [sql, setSql] = useState(defaultType.sqlHint ?? "");
 
   const selected = CHART_TYPES.find((c) => c.value === chartType)!;
 
   const handleTypeChange = (v: ChartType) => {
     setChartType(v);
-    setSql(CHART_TYPES.find((c) => c.value === v)!.sqlHint);
+    setSql(CHART_TYPES.find((c) => c.value === v)!.sqlHint ?? "");
   };
 
   const handleAdd = () => {
-    if (!title.trim() || !sql.trim()) return;
+    if (!title.trim() || !sql?.trim()) return;
     onAdd({
       title: title.trim(),
       chartType,
-      sql: sql.trim(),
-      w: selected.defaultW,
+      sql: sql?.trim() ?? "",
+      w: selected.defaultW ?? 6,
       h: chartType === "kpi" ? 3 : chartType === "table" ? 8 : 5,
     });
     setTitle("");
     setChartType(defaultType.value);
-    setSql(defaultType.sqlHint);
+    setSql(defaultType.sqlHint ?? "");
     onOpenChange(false);
   };
 

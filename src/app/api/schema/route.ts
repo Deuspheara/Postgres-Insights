@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { introspectSchema } from "@/lib/schema";
 import { getCachedSchema, setCachedSchema } from "@/lib/cache";
+import { apiError } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
   const refresh = req.nextUrl.searchParams.get("refresh") === "true";
@@ -13,6 +14,6 @@ export async function GET(req: NextRequest) {
     setCachedSchema(schema);
     return NextResponse.json(schema);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return apiError(e);
   }
 }

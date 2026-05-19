@@ -2,13 +2,9 @@ import path from "path";
 import fs from "fs";
 import type { AppSettings, SafetyConfig } from "@/types";
 import { DEFAULT_SAFETY_CONFIG } from "@/types";
+import { ensureDir } from "./fs-utils";
 
 const SETTINGS_PATH = path.join(process.cwd(), "data", "settings.json");
-
-function ensureDir() {
-  const dir = path.dirname(SETTINGS_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
 
 export function loadSettings(): AppSettings {
   ensureDir();

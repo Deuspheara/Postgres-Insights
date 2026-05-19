@@ -1,5 +1,6 @@
 import { withClient } from "./db";
 import type { TableProfile, ColumnProfile, ColumnInfo } from "@/types";
+import { PROFILE_MAX_COLUMNS, PROFILE_STATEMENT_TIMEOUT_MS } from "./constants";
 
 const SKIP_TYPES = new Set(["bytea", "json", "jsonb", "xml", "tsvector", "tsquery"]);
 const MAX_TOP_VALUES = 10;
@@ -23,12 +24,12 @@ export async function profileTable(
       !c.name.toLowerCase().includes("secret") &&
       !c.name.toLowerCase().includes("token") &&
       !c.name.toLowerCase().includes("hash")
-  ).slice(0, 20); // max 20 columns per quick profile
+  ).slice(0, PROFILE_MAX_COLUMNS); // max columns per quick profile
 
   const columnProfiles: ColumnProfile[] = [];
 
   await withClient(async (client) => {
-    await client.query("SET statement_timeout = 30000");
+    await client.query(`SET statement_timeout = ${PROFILE_STATEMENT_TIMEOUT_MS}`);
 
     // Get actual row count (bounded)
     let rowCount = estimatedRowCount;
@@ -38,7 +39,9 @@ export async function profileTable(
       );
       rowCount = parseInt(countRes.rows[0].cnt, 10);
       if (usesSample) rowCount = Math.round(rowCount * (estimatedRowCount / rowCount));
-    } catch {}
+    } catch {
+      console.warn("Row count query failed, using estimate");
+    }
 
     for (const col of profileable) {
       try {
@@ -98,7 +101,7 @@ export async function profileTable(
           roleHint: col.roleHint,
         });
       } catch {
-        // Skip column on error
+        console.warn("Column profiling failed for", col.name);
       }
     }
   });

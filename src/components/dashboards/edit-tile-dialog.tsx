@@ -10,30 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  BarChart3,
-  Hash,
-  Table2,
-  TrendingUp,
-  PieChart,
-} from "lucide-react";
 import type { DashboardTile, ChartType } from "@/types";
 import { cn } from "@/lib/utils";
-
-const CHART_TYPES: {
-  value: ChartType;
-  label: string;
-  icon: React.ElementType;
-  desc: string;
-}[] = [
-  { value: "kpi", label: "KPI", icon: Hash, desc: "Single metric" },
-  { value: "line", label: "Line", icon: TrendingUp, desc: "Trend over time" },
-  { value: "bar", label: "Bar", icon: BarChart3, desc: "Category comparison" },
-  { value: "area", label: "Area", icon: TrendingUp, desc: "Volume over time" },
-  { value: "stacked-bar", label: "Stacked", icon: BarChart3, desc: "Multi-series bars" },
-  { value: "donut", label: "Donut", icon: PieChart, desc: "Part-to-whole" },
-  { value: "table", label: "Table", icon: Table2, desc: "Raw data grid" },
-];
+import { CHART_TYPES } from "@/lib/chart-constants";
 
 interface EditTileDialogProps {
   tile: DashboardTile | null;
@@ -117,11 +96,11 @@ export function EditTileDialog({ tile, open, onOpenChange, onSave }: EditTileDia
           <div className="space-y-1.5">
             <Label className="text-xs">SQL Query</Label>
             <div className="rounded-lg overflow-hidden">
-              <div className="bg-[#1c1c1a] px-3 py-1.5 flex items-center gap-2">
-                <span className="text-[10px] font-mono text-[#6b5f58] uppercase tracking-wider">SQL</span>
+              <div className="bg-zinc-900 px-3 py-1.5 flex items-center gap-2">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">SQL</span>
               </div>
               <textarea
-                className="w-full h-48 px-4 py-3 font-mono text-[12px] text-[#c4845e] bg-[#1c1c1a] resize-none outline-none placeholder:text-[#4a4744] leading-relaxed"
+                className="w-full h-48 px-4 py-3 font-mono text-[12px] text-primary/70 bg-zinc-900 resize-none outline-none placeholder:text-muted-foreground/50 leading-relaxed"
                 value={sql}
                 onChange={(e) => setSql(e.target.value)}
                 spellCheck={false}

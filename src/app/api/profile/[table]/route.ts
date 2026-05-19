@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { profileTable } from "@/lib/profiler";
 import { getCachedProfile, setCachedProfile, getCachedSchema } from "@/lib/cache";
+import { apiError } from "@/lib/api-utils";
 
 export async function GET(
   req: NextRequest,
@@ -35,6 +36,6 @@ export async function GET(
     setCachedProfile(profile);
     return NextResponse.json(profile);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return apiError(e);
   }
 }

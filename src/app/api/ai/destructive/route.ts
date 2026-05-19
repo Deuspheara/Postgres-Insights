@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateDestructivePlan } from "@/lib/ai";
 import { getCachedSchema } from "@/lib/cache";
 import { z } from "zod";
+import { apiError } from "@/lib/api-utils";
 
 const schema = z.object({ prompt: z.string().min(1) });
 
@@ -15,6 +16,6 @@ export async function POST(req: NextRequest) {
     const result = await generateDestructivePlan(prompt, schemaInfo);
     return NextResponse.json(result);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return apiError(e);
   }
 }

@@ -3,36 +3,18 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   Database,
-  Zap,
-  BarChart3,
   AlertTriangle,
   RefreshCw,
   Plus,
   Sparkles,
   ArrowRight,
-  Settings,
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { SchemaInfo, TableInfo, SavedQuery } from "@/types";
-import { cn } from "@/lib/utils";
-
-function formatRows(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toLocaleString();
-}
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
+import { SENTINEL_API_KEY } from "@/types";
+import { cn, timeAgo, formatRows, ageInHours } from "@/lib/utils";
 
 function TableCard({ table }: { table: TableInfo }) {
   return (
@@ -79,10 +61,11 @@ function HealthSignalRow({ signal }: { signal: HealthSignal }) {
         <p className="text-sm font-semibold text-foreground leading-snug">{signal.title}</p>
         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{signal.desc}</p>
       </div>
-      <Link href={signal.href}>
-        <button className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-muted hover:bg-accent text-muted-foreground transition-colors">
-          {signal.action}
-        </button>
+      <Link 
+        href={signal.href} 
+        className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-muted hover:bg-accent text-muted-foreground transition-colors"
+      >
+        {signal.action}
       </Link>
     </div>
   );
@@ -92,18 +75,16 @@ function KpiTile({
   label,
   value,
   sub,
-  accent = false,
 }: {
   label: string;
   value: string;
   sub?: string;
-  accent?: boolean;
 }) {
   return (
     <div
       className={cn(
         "rounded-xl px-5 py-4 shadow-[0_4px_20px_-2px_rgba(28,28,26,0.05)]",
-        accent ? "bg-card" : "bg-card"
+        "bg-card"
       )}
     >
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -134,7 +115,7 @@ export default function HomePage() {
   });
 
   const isConnected = !!settings?.connection;
-  const hasAiKey = settings?.connection?.openRouterApiKey === "***configured***";
+  const hasAiKey = settings?.connection?.openRouterApiKey === SENTINEL_API_KEY;
   const safeMode = settings?.safetyConfig?.safeMode ?? true;
 
   // — No connection state —
@@ -190,18 +171,15 @@ export default function HomePage() {
       href: "/explore",
     });
   }
-  if (schema?.capturedAt) {
-    const ageHours = (Date.now() - new Date(schema.capturedAt).getTime()) / 3_600_000;
-    if (ageHours > 24) {
-      healthSignals.push({
-        id: "stale-schema",
-        severity: "info",
-        title: "Schema cache is stale",
-        desc: `Schema was last refreshed ${timeAgo(schema.capturedAt)}. Go to Explore to refresh.`,
-        action: "Refresh",
-        href: "/explore",
+  if (schema?.capturedAt && ageInHours(schema.capturedAt) > 24) {
+    healthSignals.push({
+      id: "stale-schema",
+      severity: "info",
+      title: "Schema cache is stale",
+      desc: `Schema was last refreshed ${timeAgo(schema.capturedAt)}. Go to Explore to refresh.`,
+      action: "Refresh",
+      href: "/explore",
       });
-    }
   }
 
   const recentQueries = savedQueries?.slice(0, 4) ?? [];

@@ -339,3 +339,5 @@ export const DEFAULT_SAFETY_CONFIG: SafetyConfig = {
   safeMode: true,
   writesEnabled: false,
 };
+
+export const SENTINEL_API_KEY = "***configured***";

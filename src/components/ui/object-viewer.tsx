@@ -46,7 +46,7 @@ function JsonTree({ data, depth = 0, maxDepth = 3 }: { data: unknown; depth?: nu
     return (
       <div className="font-mono text-xs">
         <span className="text-muted-foreground">{"{"}</span>
-        {entries.map(([key, val], idx) => {
+        {entries.map(([key, val]) => {
           const nodeKey = `${depth}-${key}`;
           const isExpandable = isObject(val) || isArray(val);
           const isExp = expanded[nodeKey];

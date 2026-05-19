@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withClient } from "@/lib/db";
 import { z } from "zod";
 import type { DestructiveQueryPlan, TableImpact } from "@/types";
+import { apiError } from "@/lib/api-utils";
 
 const schema = z.object({
   plan: z.object({
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ plan: updatedPlan, tableImpacts: Array.from(tableImpacts.values()) });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return apiError(e);
   }
 }
 

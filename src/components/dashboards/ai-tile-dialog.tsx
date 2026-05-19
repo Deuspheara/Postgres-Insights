@@ -20,24 +20,10 @@ import {
 } from "@/components/ui/select";
 import {
   Sparkles,
-  BarChart3,
-  Hash,
-  TrendingUp,
-  PieChart,
-  Table2,
   Loader2,
 } from "lucide-react";
 import type { AITileResponse, ChartType } from "@/types";
-
-const CHART_TYPES: { value: ChartType; label: string; icon: React.ElementType; desc: string }[] = [
-  { value: "kpi", label: "KPI", icon: Hash, desc: "Single metric" },
-  { value: "line", label: "Line", icon: TrendingUp, desc: "Trend over time" },
-  { value: "bar", label: "Bar", icon: BarChart3, desc: "Category comparison" },
-  { value: "area", label: "Area", icon: TrendingUp, desc: "Volume over time" },
-  { value: "stacked-bar", label: "Stacked", icon: BarChart3, desc: "Multi-series bars" },
-  { value: "donut", label: "Donut", icon: PieChart, desc: "Part-to-whole" },
-  { value: "table", label: "Table", icon: Table2, desc: "Raw data grid" },
-];
+import { CHART_TYPES } from "@/lib/chart-constants";
 
 interface AITileDialogProps {
   open: boolean;
@@ -117,7 +103,7 @@ export function AITileDialog({ open, onOpenChange, onAdd }: AITileDialogProps) {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#8a4b31]" />
+            <Sparkles className="w-5 h-5 text-primary" />
             Add AI Tile
           </DialogTitle>
         </DialogHeader>
@@ -189,12 +175,12 @@ export function AITileDialog({ open, onOpenChange, onAdd }: AITileDialogProps) {
 
           {loading && (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#f5ede8] flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-[#8a4b31] animate-pulse" />
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-primary animate-pulse" />
               </div>
               <div className="text-center">
-                <p className="font-medium text-[#1c1c1a]">Generating SQL...</p>
-                <p className="text-sm text-[#8b7d76] mt-1">Analyzing schema for optimal query</p>
+                <p className="font-medium text-foreground">Generating SQL...</p>
+                <p className="text-sm text-muted-foreground mt-1">Analyzing schema for optimal query</p>
               </div>
             </div>
           )}
@@ -214,20 +200,20 @@ export function AITileDialog({ open, onOpenChange, onAdd }: AITileDialogProps) {
                 <div className="space-y-1.5">
                   <Label className="text-xs">SQL Query</Label>
                   <div className="rounded-lg overflow-hidden">
-                    <div className="bg-[#1c1c1a] px-3 py-1.5 flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-[#6b5f58] uppercase tracking-wider">SQL</span>
-                      <span className="text-[10px] text-[#8b7d76] ml-auto">{result.chartType}</span>
+                    <div className="bg-zinc-900 px-3 py-1.5 flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">SQL</span>
+                      <span className="text-[10px] text-muted-foreground ml-auto">{result.chartType}</span>
                     </div>
                     <Textarea
                       value={editSql}
                       onChange={(e) => setEditSql(e.target.value)}
-                      className="h-32 font-mono text-[12px] text-[#c4845e] bg-[#1c1c1a] resize-none outline-none placeholder:text-[#4a4744] leading-relaxed rounded-none border-0"
+                      className="h-32 font-mono text-[12px] text-primary/70 bg-zinc-900 resize-none outline-none placeholder:text-muted-foreground/50 leading-relaxed rounded-none border-0"
                     />
                   </div>
                 </div>
 
                 {result.explanation && (
-                  <div className="bg-[#fdf8f4] rounded-lg p-3 text-sm text-[#6b5f58]">
+                  <div className="bg-primary/5 rounded-lg p-3 text-sm text-muted-foreground">
                     <p className="font-semibold mb-1">Explanation:</p>
                     <p>{result.explanation}</p>
                   </div>

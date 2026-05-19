@@ -137,7 +137,7 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#8a4b31]" />
+            <Sparkles className="w-5 h-5 text-primary" />
             Generate AI Dashboard
           </DialogTitle>
         </DialogHeader>
@@ -156,12 +156,12 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
                       className={cn(
                         "p-3 rounded-lg border text-left transition-all",
                         selectedTemplate === template.id
-                          ? "border-[#8a4b31] bg-[#fdf8f4]"
-                          : "border-[rgba(28,28,26,0.08)] hover:border-[#8a4b31]/30"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/30"
                       )}
                     >
-                      <p className="text-sm font-semibold text-[#1c1c1a]">{template.name}</p>
-                      <p className="text-[10px] text-[#8b7d76] mt-0.5">{template.category}</p>
+                      <p className="text-sm font-semibold text-foreground">{template.name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{template.category}</p>
                     </button>
                   ))}
                 </div>
@@ -177,7 +177,7 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
                 />
               </div>
 
-              <div className="bg-[#fdf8f4] rounded-lg p-4 text-sm text-[#6b5f58]">
+              <div className="bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
                 <p className="font-semibold mb-1">Tips for better results:</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>Be specific about the metrics you want to track</li>
@@ -214,12 +214,12 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
 
           {loading && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#f5ede8] flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-[#8a4b31] animate-pulse" />
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
               </div>
               <div className="text-center">
-                <p className="font-medium text-[#1c1c1a]">Analyzing your database...</p>
-                <p className="text-sm text-[#8b7d76] mt-1">Generating optimal charts for your request</p>
+                <p className="font-medium text-foreground">Analyzing your database...</p>
+                <p className="text-sm text-muted-foreground mt-1">Generating optimal charts for your request</p>
               </div>
             </div>
           )}
@@ -227,10 +227,10 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
           {preview && (
             <div className="space-y-4">
               {/* Dashboard preview header */}
-              <div className="bg-white rounded-lg border border-[rgba(28,28,26,0.06)] p-4">
-                <h3 className="font-semibold text-[#1c1c1a] text-lg">{preview.title}</h3>
+              <div className="bg-white rounded-lg border border-border p-4">
+                <h3 className="font-semibold text-foreground text-lg">{preview.title}</h3>
                 {preview.description && (
-                  <p className="text-sm text-[#8b7d76] mt-1">{preview.description}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{preview.description}</p>
                 )}
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="secondary" className="text-xs">
@@ -244,7 +244,7 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
 
               {/* Tile preview grid */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#8b7d76] uppercase tracking-wider">Preview Tiles</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preview Tiles</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {preview.tiles.map((tile, index) => {
                     const Icon = CHART_TYPE_ICONS[tile.chartType] || BarChart3;
@@ -253,7 +253,7 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
                     return (
                       <div
                         key={index}
-                        className="bg-white rounded-lg border border-[rgba(28,28,26,0.06)] p-4 relative group"
+                        className="bg-white rounded-lg border border-border p-4 relative group"
                       >
                         {isEditing ? (
                           <div className="space-y-3">
@@ -288,25 +288,25 @@ export function AIGenerateDialog({ open, onOpenChange, onCreate }: AIGenerateDia
                           <>
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex items-start gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-[#f0ece8] flex items-center justify-center shrink-0">
-                                  <Icon className="w-4 h-4 text-[#8a4b31]" />
+                                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                  <Icon className="w-4 h-4 text-primary" />
                                 </div>
                                 <div>
-                                  <p className="text-sm font-semibold text-[#1c1c1a]">{tile.title}</p>
-                                  <p className="text-[10px] text-[#8b7d76] uppercase tracking-wider mt-0.5">
+                                  <p className="text-sm font-semibold text-foreground">{tile.title}</p>
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
                                     {tile.chartType}
                                   </p>
                                 </div>
                               </div>
                               <button
                                 onClick={() => handleEditTile(index)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-[#f0ece8] text-[#8b7d76]"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-muted text-muted-foreground"
                               >
                                 <Edit2 className="w-3 h-3" />
                               </button>
                             </div>
-                            <div className="mt-3 bg-[#1c1c1a] rounded-lg p-2.5 overflow-x-auto">
-                              <pre className="text-[10px] font-mono text-[#c4845e] whitespace-pre-wrap leading-relaxed">
+                            <div className="mt-3 bg-zinc-900 rounded-lg p-2.5 overflow-x-auto">
+                              <pre className="text-[10px] font-mono text-primary/70 whitespace-pre-wrap leading-relaxed">
                                 {tile.sql.slice(0, 120)}{tile.sql.length > 120 ? "..." : ""}
                               </pre>
                             </div>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectViewer } from "@/components/ui/object-viewer";
 import { DestructionPreview } from "@/components/destructive/destruction-preview";
 import { Play, Save, Sparkles, Clock, AlertTriangle, BookOpen, Trash2, Shield, CheckCircle2, XCircle } from "lucide-react";

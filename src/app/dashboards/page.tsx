@@ -8,16 +8,7 @@ import type { Dashboard, AIDashboardResponse } from "@/types";
 import Link from "next/link";
 import { useState } from "react";
 import { AIGenerateDialog } from "@/components/dashboards/ai-generate-dialog";
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
+import { timeAgo } from "@/lib/utils";
 
 export default function DashboardsPage() {
   const qc = useQueryClient();

@@ -1,5 +1,6 @@
 import { Pool, PoolClient } from "pg";
 import { loadSettings } from "./settings";
+import { POOL_MAX, POOL_IDLE_TIMEOUT_MS, POOL_CONNECTION_TIMEOUT_MS } from "./constants";
 
 let _pool: Pool | null = null;
 let _connectionString: string | null = null;
@@ -29,14 +30,14 @@ export function getPool(): Pool {
   if (_pool && _connectionString === cs) return _pool;
 
   if (_pool) {
-    _pool.end().catch(() => {});
+    _pool.end().catch((err) => { console.warn("Pool shutdown warning:", (err as Error).message); });
   }
 
   _pool = new Pool({
     ...poolOptions(cs),
-    max: 5,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 30000,
+    max: POOL_MAX,
+    idleTimeoutMillis: POOL_IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: POOL_CONNECTION_TIMEOUT_MS,
     application_name: "pg-insights",
   });
 
@@ -79,7 +80,7 @@ export async function testConnection(connectionString: string): Promise<{ ok: bo
 
 export function resetPool() {
   if (_pool) {
-    _pool.end().catch(() => {});
+    _pool.end().catch((err) => { console.warn("Pool shutdown warning:", (err as Error).message); });
     _pool = null;
     _connectionString = null;
   }

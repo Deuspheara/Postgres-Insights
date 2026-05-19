@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllSavedQueries, saveQuery, deleteQuery } from "@/lib/cache";
 import type { SavedQuery } from "@/types";
 import { z } from "zod";
+import { apiError } from "@/lib/api-utils";
 
 export async function GET() {
   return NextResponse.json(getAllSavedQueries());
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     saveQuery(query);
     return NextResponse.json(query);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    return apiError(e, 400);
   }
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withClient } from "@/lib/db";
 import { z } from "zod";
+import { apiError } from "@/lib/api-utils";
 
 const schema = z.object({ sql: z.string().min(1) });
 
@@ -13,6 +14,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ plan: result.rows[0]["QUERY PLAN"] });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    return apiError(e, 400);
   }
 }

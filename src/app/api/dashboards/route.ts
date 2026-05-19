@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllDashboards, saveDashboard } from "@/lib/cache";
 import type { Dashboard } from "@/types";
+import { apiError } from "@/lib/api-utils";
 
 export async function GET() {
   return NextResponse.json(getAllDashboards());
@@ -22,6 +23,6 @@ export async function POST(req: NextRequest) {
     saveDashboard(dashboard);
     return NextResponse.json(dashboard);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    return apiError(e, 400);
   }
 }

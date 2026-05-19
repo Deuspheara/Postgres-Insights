@@ -12,7 +12,7 @@ import {
 import { RefreshCw, AlertTriangle, Code2, TrendingUp, TrendingDown, Minus, Download, Edit2 } from "lucide-react";
 import type { DashboardTile, QueryResult } from "@/types";
 import { useState, useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, fmtNum } from "@/lib/utils";
 
 // ─── Warm palette — hardcoded hex (CSS vars don't resolve inside SVG) ─────────
 const PALETTE = [
@@ -26,15 +26,6 @@ const PALETTE = [
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function fmtNum(v: unknown): string {
-  if (v === null || v === undefined) return "—";
-  const n = Number(v);
-  if (isNaN(n)) return String(v);
-  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
 function coerce(result: QueryResult) {
   return result.rows.map((r) => {
     const out: Record<string, unknown> = {};
@@ -95,7 +86,7 @@ function ChartTooltip({
   return (
     <div className="bg-white shadow-[0_8px_24px_-4px_rgba(28,28,26,0.18)] rounded-lg p-3 text-xs pointer-events-none min-w-32">
       {label != null && (
-        <p className="font-semibold text-[#6b5f58] mb-2 truncate max-w-52">{String(label)}</p>
+        <p className="font-semibold text-muted-foreground mb-2 truncate max-w-52">{String(label)}</p>
       )}
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 py-0.5">
@@ -103,8 +94,8 @@ function ChartTooltip({
             className="w-2 h-2 rounded-full shrink-0"
             style={{ background: p.color }}
           />
-          <span className="text-[#6b5f58] truncate max-w-28">{p.name}</span>
-          <span className="font-bold text-[#1c1c1a] ml-auto pl-4 tabular-nums">
+          <span className="text-muted-foreground truncate max-w-28">{p.name}</span>
+          <span className="font-bold text-foreground ml-auto pl-4 tabular-nums">
             {typeof p.value === "number" ? fmtNum(p.value) : String(p.value ?? "—")}
           </span>
         </div>
@@ -178,10 +169,10 @@ function KPICard({ result }: { result: QueryResult }) {
   return (
     <div className="flex flex-col justify-between h-full">
       <div>
-        <p className="text-4xl font-bold tracking-tight text-[#1c1c1a] leading-none tabular-nums">
+        <p className="text-4xl font-bold tracking-tight text-foreground leading-none tabular-nums">
           {numVal !== null ? fmtNum(numVal) : String(rawVal ?? "—")}
         </p>
-        <p className="text-xs text-[#8b7d76] mt-2 font-medium capitalize">
+        <p className="text-xs text-muted-foreground mt-2 font-medium capitalize">
           {mainField?.name?.replace(/_/g, " ") ?? "value"}
         </p>
         {trendNum !== null && (
@@ -192,7 +183,7 @@ function KPICard({ result }: { result: QueryResult }) {
                 ? "text-green-700 bg-green-50"
                 : isDown
                 ? "text-red-600 bg-red-50"
-                : "text-[#8b7d76] bg-[#f0ece8]"
+                : "text-muted-foreground bg-muted"
             )}
           >
             {isUp ? (
@@ -279,8 +270,8 @@ function PieDonutChart({ result, isDonut }: { result: QueryResult; isDonut: bool
 function GenericChart({ tile, result }: { tile: DashboardTile; result: QueryResult }) {
   if (result.rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-[#8b7d76]">
-        <div className="w-9 h-9 rounded-lg bg-[#f0ece8] flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
+        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
           <Minus className="w-4 h-4" />
         </div>
         <span className="text-xs">No data returned</span>
@@ -298,11 +289,11 @@ function GenericChart({ tile, result }: { tile: DashboardTile; result: QueryResu
       <div className="overflow-auto h-full text-xs">
         <table className="w-full border-collapse">
           <thead className="sticky top-0">
-            <tr className="bg-[#f0ece8]">
+            <tr className="bg-muted">
               {fields.map((f) => (
                 <th
                   key={f.name}
-                  className="px-3 py-2 text-left font-semibold text-[#6b5f58] uppercase tracking-wider text-[10px] whitespace-nowrap"
+                  className="px-3 py-2 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap"
                 >
                   {f.name.replace(/_/g, " ")}
                 </th>
@@ -314,17 +305,17 @@ function GenericChart({ tile, result }: { tile: DashboardTile; result: QueryResu
               <tr
                 key={i}
                 className={cn(
-                  "transition-colors hover:bg-[#f0ece8]/60",
-                  i % 2 === 0 ? "bg-white" : "bg-[#fcf9f6]"
+                  "transition-colors hover:bg-muted/60",
+                  i % 2 === 0 ? "bg-white" : "bg-muted/30"
                 )}
               >
                 {fields.map((f) => (
                   <td
                     key={f.name}
-                    className="px-3 py-1.5 font-mono whitespace-nowrap truncate max-w-[180px] text-[#1c1c1a]"
+                    className="px-3 py-1.5 font-mono whitespace-nowrap truncate max-w-[180px] text-foreground"
                   >
                     {row[f.name] === null ? (
-                      <span className="text-[#8b7d76] italic">NULL</span>
+                      <span className="text-muted-foreground italic">NULL</span>
                     ) : (
                       String(row[f.name])
                     )}
@@ -490,7 +481,7 @@ export function ChartTile({
       <div className="flex items-start gap-2 px-4 pt-3.5 pb-2 shrink-0">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-[13px] font-semibold text-[#1c1c1a] truncate leading-snug">
+            <p className="text-[13px] font-semibold text-foreground truncate leading-snug">
               {tile.title}
             </p>
             {trend && trend.trend !== null && (
@@ -501,7 +492,7 @@ export function ChartTile({
                     ? "text-green-700 bg-green-50"
                     : trend.isDown
                     ? "text-red-600 bg-red-50"
-                    : "text-[#8b7d76] bg-[#f0ece8]"
+                    : "text-muted-foreground bg-muted"
                 )}
               >
                 {trend.isUp ? (
@@ -517,27 +508,27 @@ export function ChartTile({
             )}
           </div>
           {tile.subtitle && (
-            <p className="text-[10px] text-[#8b7d76] truncate mt-0.5">{tile.subtitle}</p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">{tile.subtitle}</p>
           )}
         </div>
         {/* Controls – appear on hover */}
         <div className="flex items-center gap-0.5 opacity-0 group-hover/tile:opacity-100 transition-opacity shrink-0 pt-0.5">
           {result?.durationMs != null && (
-            <span className="text-[10px] text-[#8b7d76] font-mono mr-1">
+            <span className="text-[10px] text-muted-foreground font-mono mr-1">
               {result.durationMs}ms
             </span>
           )}
           <button
             onClick={() => refetch()}
             title="Refresh"
-            className="p-1 rounded hover:bg-[#f0ece8] text-[#8b7d76] transition-colors"
+            className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
           >
             <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
           </button>
           <button
             onClick={handleExport}
             title="Export"
-            className="p-1 rounded hover:bg-[#f0ece8] text-[#8b7d76] transition-colors"
+            className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
           </button>
@@ -545,7 +536,7 @@ export function ChartTile({
             <button
               onClick={onEdit}
               title="Edit SQL"
-              className="p-1 rounded hover:bg-[#f0ece8] text-[#8b7d76] transition-colors"
+              className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
@@ -554,8 +545,8 @@ export function ChartTile({
             onClick={() => setShowSql((s) => !s)}
             title="View SQL"
             className={cn(
-              "p-1 rounded hover:bg-[#f0ece8] transition-colors",
-              showSql ? "text-[#8a4b31]" : "text-[#8b7d76]"
+              "p-1 rounded hover:bg-muted transition-colors",
+              showSql ? "text-primary" : "text-muted-foreground"
             )}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -564,7 +555,7 @@ export function ChartTile({
             <button
               onClick={onRemove}
               title="Remove tile"
-              className="p-1 rounded hover:bg-red-50 text-[#8b7d76] hover:text-red-500 transition-colors text-base leading-none"
+              className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors text-base leading-none"
             >
               ×
             </button>
@@ -574,14 +565,14 @@ export function ChartTile({
 
       {/* SQL drawer */}
       {showSql && (
-        <div className="bg-[#1c1c1a] mx-3 mb-2 rounded-lg px-3 py-2.5 shrink-0">
-          <pre className="text-[11px] font-mono text-[#c4845e] overflow-x-auto max-h-24 whitespace-pre leading-relaxed">
+        <div className="bg-zinc-900 mx-3 mb-2 rounded-lg px-3 py-2.5 shrink-0">
+          <pre className="text-[11px] font-mono text-primary/70 overflow-x-auto max-h-24 whitespace-pre leading-relaxed">
             {tile.sql}
           </pre>
         </div>
       )}
 
-      <div className="h-px bg-[rgba(28,28,26,0.04)] shrink-0 mx-3" />
+      <div className="h-px bg-border/10 shrink-0 mx-3" />
 
       {/* Chart body */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
@@ -592,7 +583,7 @@ export function ChartTile({
           )}
         >
           {isLoading && (
-            <div className="flex items-center justify-center h-full gap-2 text-[#8b7d76]">
+            <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
               <RefreshCw className="w-4 h-4 animate-spin" />
               <span className="text-xs">Loading...</span>
             </div>
@@ -619,7 +610,7 @@ export function ChartTile({
 
           {!tile.sql && !isLoading && (
             <div className="flex items-center justify-center h-full">
-              <span className="text-xs text-[#8b7d76]">No SQL configured</span>
+              <span className="text-xs text-muted-foreground">No SQL configured</span>
             </div>
           )}
         </div>

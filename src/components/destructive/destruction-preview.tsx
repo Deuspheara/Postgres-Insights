@@ -4,21 +4,18 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { ObjectViewer } from "@/components/ui/object-viewer";
 import { 
   AlertTriangle, 
   CheckCircle2, 
-  XCircle, 
   Trash2, 
   Eye, 
   Loader2,
   Database,
   Table2,
-  ArrowRight,
   Shield,
   Undo2
 } from "lucide-react";
@@ -83,10 +80,6 @@ export function DestructionPreview({ plan, onClose, onExecuteComplete }: Destruc
   const handleExecute = () => {
     executeMutation.mutate(analyzedPlan || plan);
   };
-
-  const verificationSteps = plan.steps.filter(s => s.type === "verification");
-  const deletionSteps = plan.steps.filter(s => s.type === "deletion");
-  const finalSteps = plan.steps.filter(s => s.type === "verification_final");
 
   return (
     <Dialog open onOpenChange={() => onClose()}>

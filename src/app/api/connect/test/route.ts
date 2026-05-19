@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { testConnection, resetPool } from "@/lib/db";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { z } from "zod";
+import { apiError } from "@/lib/api-utils";
 
 const schema = z.object({
   connectionString: z.string().min(1),
@@ -35,6 +36,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e: unknown) {
-    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 400 });
+    return apiError(e, 400);
   }
 }

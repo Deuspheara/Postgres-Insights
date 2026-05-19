@@ -68,18 +68,18 @@ function SqlBlock({ sql, copyable = false }: { sql: string; copyable?: boolean }
 
   return (
     <div className="rounded-lg overflow-hidden flex-1">
-      <div className="bg-[#1c1c1a] px-3 py-1.5 flex items-center justify-between">
-        <span className="text-[10px] font-mono text-[#6b5f58] uppercase tracking-wider">SQL BASIS</span>
+      <div className="bg-zinc-900 px-3 py-1.5 flex items-center justify-between">
+        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">SQL BASIS</span>
         {copyable && (
           <button
             onClick={handleCopy}
-            className="text-[10px] text-[#6b5f58] hover:text-[#c4845e] transition-colors"
+            className="text-[10px] text-muted-foreground hover:text-primary/70 transition-colors"
           >
             {copied ? "Copied" : "Copy"}
           </button>
         )}
       </div>
-      <pre className="bg-[#1c1c1a] px-4 py-3 text-[11px] font-mono text-[#c4845e] overflow-x-auto leading-relaxed whitespace-pre-wrap">
+      <pre className="bg-zinc-900 px-4 py-3 text-[11px] font-mono text-primary/70 overflow-x-auto leading-relaxed whitespace-pre-wrap">
         {sql}
       </pre>
     </div>
@@ -99,7 +99,7 @@ function FindingCard({ finding, pinned, onPin }: {
   const hasDetails = !!(finding.whatWeFound || finding.whyItMatters);
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-[rgba(28,28,26,0.06)] flex flex-col">
+    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-border flex flex-col">
       {/* Card header */}
       <div className="p-5 pb-3">
         <div className="flex items-start justify-between gap-3">
@@ -108,13 +108,13 @@ function FindingCard({ finding, pinned, onPin }: {
               <Icon className={cn("w-4.5 h-4.5", cfg.iconColor)} style={{ width: 18, height: 18 }} />
             </div>
             <div>
-              <h3 className="font-semibold text-[#1c1c1a] text-[15px] leading-snug">{finding.title}</h3>
+              <h3 className="font-semibold text-foreground text-[15px] leading-snug">{finding.title}</h3>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", cfg.color)}>
                   {cfg.label}
                 </span>
                 {finding.sampleSize && (
-                  <span className="text-[11px] text-[#8b7d76]">· Based on {finding.sampleSize}</span>
+                  <span className="text-[11px] text-muted-foreground">· Based on {finding.sampleSize}</span>
                 )}
               </div>
             </div>
@@ -123,7 +123,7 @@ function FindingCard({ finding, pinned, onPin }: {
             onClick={onPin}
             className={cn(
               "p-1.5 rounded-lg transition-colors shrink-0",
-              pinned ? "text-[#8a4b31] bg-[#f5ede8]" : "text-[#8b7d76] hover:bg-[#f0ece8]"
+              pinned ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-muted"
             )}
           >
             <Star className="w-3.5 h-3.5" fill={pinned ? "currentColor" : "none"} />
@@ -139,14 +139,14 @@ function FindingCard({ finding, pinned, onPin }: {
             <div className="flex-1 space-y-3 min-w-0">
               {finding.whatWeFound && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b7d76] mb-1">What we found</p>
-                  <p className="text-[13px] text-[#3c3835] leading-relaxed">{finding.whatWeFound}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">What we found</p>
+                  <p className="text-[13px] text-foreground/80 leading-relaxed">{finding.whatWeFound}</p>
                 </div>
               )}
               {finding.whyItMatters && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b7d76] mb-1">Why it matters</p>
-                  <p className="text-[13px] text-[#3c3835] leading-relaxed">{finding.whyItMatters}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Why it matters</p>
+                  <p className="text-[13px] text-foreground/80 leading-relaxed">{finding.whyItMatters}</p>
                 </div>
               )}
             </div>
@@ -157,7 +157,7 @@ function FindingCard({ finding, pinned, onPin }: {
           </>
         ) : (
           <>
-            <p className="text-[13px] text-[#3c3835] leading-relaxed">{finding.description}</p>
+            <p className="text-[13px] text-foreground/80 leading-relaxed">{finding.description}</p>
             {finding.sql && <SqlBlock sql={finding.sql} copyable />}
           </>
         )}
@@ -167,7 +167,7 @@ function FindingCard({ finding, pinned, onPin }: {
       <div className="px-5 pb-4 pt-1 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           {finding.table && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono bg-[#f0ece8] text-[#6b5f58] px-2.5 py-1 rounded-lg">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono bg-muted text-muted-foreground px-2.5 py-1 rounded-lg">
               <Database className="w-3 h-3" />
               {finding.table}
             </span>
@@ -188,7 +188,7 @@ function FindingCard({ finding, pinned, onPin }: {
             </Button>
           )}
           {finding.suggestedAction && (
-            <button className="text-[12px] text-[#8a4b31] font-medium flex items-center gap-1 hover:underline">
+            <button className="text-[12px] text-primary font-medium flex items-center gap-1 hover:underline">
               {finding.suggestedAction.length > 30 ? "Analyze partition" : finding.suggestedAction}
               <ChevronRight className="w-3 h-3" />
             </button>
@@ -207,14 +207,14 @@ function AlertCard({ alert }: { alert: RecommendedAlert }) {
   const gainPct = gainNum !== null && alert.estimatedGain?.includes("ms") ? Math.min(Math.abs(gainNum) / 1000 * 100, 95) : 70;
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-[rgba(28,28,26,0.06)] flex flex-col">
+    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-border flex flex-col">
       <div className="p-5 pb-3">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
             <Zap className="w-[18px] h-[18px] text-amber-700" />
           </div>
           <div>
-            <h3 className="font-semibold text-[#1c1c1a] text-[15px] leading-snug">{alert.title}</h3>
+            <h3 className="font-semibold text-foreground text-[15px] leading-snug">{alert.title}</h3>
             <span className="inline-block mt-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-amber-800 bg-amber-50">
               PERFORMANCE
             </span>
@@ -223,10 +223,10 @@ function AlertCard({ alert }: { alert: RecommendedAlert }) {
       </div>
 
       <div className="px-5 pb-3 space-y-3 flex-1">
-        <p className="text-[13px] text-[#3c3835] leading-relaxed">
+        <p className="text-[13px] text-foreground/80 leading-relaxed">
           {alert.description.split(/(`[^`]+`)/g).map((part, i) =>
             part.startsWith("`") && part.endsWith("`") ? (
-              <code key={i} className="bg-[#f0ece8] text-[#8a4b31] px-1.5 py-0.5 rounded text-[11px] font-mono mx-0.5">
+              <code key={i} className="bg-muted text-primary px-1.5 py-0.5 rounded text-[11px] font-mono mx-0.5">
                 {part.slice(1, -1)}
               </code>
             ) : (
@@ -236,7 +236,7 @@ function AlertCard({ alert }: { alert: RecommendedAlert }) {
         </p>
 
         {alert.aiInsight && (
-          <blockquote className="bg-[#fdf8f4] border-l-2 border-[#c4845e] pl-3 py-2 text-[12px] italic text-[#6b5f58] rounded-r-lg">
+          <blockquote className="bg-primary/5 border-l-2 border-primary/70 pl-3 py-2 text-[12px] italic text-muted-foreground rounded-r-lg">
             &ldquo;{alert.aiInsight}&rdquo;
           </blockquote>
         )}
@@ -244,10 +244,10 @@ function AlertCard({ alert }: { alert: RecommendedAlert }) {
         {alert.estimatedGain && (
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] text-[#8b7d76] font-medium">Estimated Gain</span>
+              <span className="text-[11px] text-muted-foreground font-medium">Estimated Gain</span>
               <span className="text-[13px] font-bold text-emerald-700">{alert.estimatedGain}</span>
             </div>
-            <div className="h-1.5 bg-[#f0ece8] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#8a4b31] to-[#c4845e] rounded-full transition-all"
                 style={{ width: `${gainPct}%` }}
@@ -280,7 +280,7 @@ function DashboardSuggestionCard({
   isNew?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-[rgba(28,28,26,0.06)] flex flex-col">
+    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-border flex flex-col">
       <div className="p-5 pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-3">
@@ -288,8 +288,8 @@ function DashboardSuggestionCard({
               <Lightbulb className="w-[18px] h-[18px] text-orange-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-[#1c1c1a] text-[15px] leading-snug">{suggestion.title}</h3>
-              <p className="text-[11px] text-[#8b7d76] mt-0.5">Discovered via schema analysis</p>
+              <h3 className="font-semibold text-foreground text-[15px] leading-snug">{suggestion.title}</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Discovered via schema analysis</p>
             </div>
           </div>
           {isNew && (
@@ -303,19 +303,19 @@ function DashboardSuggestionCard({
       <div className="px-5 pb-4 flex-1 space-y-3">
         {suggestion.chartSpecs.length > 0 && (
           <div>
-            <p className="text-[13px] font-semibold text-[#1c1c1a] mb-1">
+            <p className="text-[13px] font-semibold text-foreground mb-1">
               {suggestion.chartSpecs[0].metric
                 ? suggestion.chartSpecs[0].metric.replace(/_/g, " ")
                 : suggestion.title}
             </p>
-            <p className="text-[13px] text-[#3c3835] leading-relaxed">{suggestion.why}</p>
+            <p className="text-[13px] text-foreground/80 leading-relaxed">{suggestion.why}</p>
           </div>
         )}
 
         {suggestion.tables.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {suggestion.tables.slice(0, 3).map((t) => (
-              <span key={t} className="text-[11px] font-mono bg-[#f0ece8] text-[#6b5f58] px-2 py-0.5 rounded-md">
+              <span key={t} className="text-[11px] font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
                 {t.split(".").pop()}
               </span>
             ))}
@@ -323,10 +323,10 @@ function DashboardSuggestionCard({
         )}
 
         {/* Preview bar */}
-        <div className="h-px bg-[rgba(28,28,26,0.06)]" />
+        <div className="h-px bg-border/10" />
         <div className="flex gap-1.5">
           {[85, 62, 40].map((w, i) => (
-            <div key={i} className="h-1.5 bg-[#f0ece8] rounded-full" style={{ width: `${w}px` }} />
+            <div key={i} className="h-1.5 bg-muted rounded-full" style={{ width: `${w}px` }} />
           ))}
         </div>
       </div>
@@ -355,20 +355,20 @@ function DashboardSuggestionCard({
 // ─── Query Card ───────────────────────────────────────────────────────────────
 function QueryCard({ q }: { q: AISuggestions["recommendedQueries"][number] }) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-[rgba(28,28,26,0.06)] flex flex-col">
+    <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_-4px_rgba(28,28,26,0.09)] border border-border flex flex-col">
       <div className="p-4 pb-2">
         <div className="flex items-start gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#f0ece8] flex items-center justify-center shrink-0 mt-0.5">
-            <Code2 className="w-4 h-4 text-[#8a4b31]" />
+          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
+            <Code2 className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-[#1c1c1a] text-sm">{q.title}</h3>
-            <p className="text-[11px] text-[#8b7d76] mt-0.5">{q.why}</p>
+            <h3 className="font-semibold text-foreground text-sm">{q.title}</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{q.why}</p>
           </div>
         </div>
       </div>
       <div className="px-4 pb-3 flex-1">
-        <pre className="text-[11px] font-mono text-[#c4845e] bg-[#1c1c1a] rounded-lg p-3 overflow-x-auto leading-relaxed max-h-28">
+        <pre className="text-[11px] font-mono text-primary/70 bg-zinc-900 rounded-lg p-3 overflow-x-auto leading-relaxed max-h-28">
           {q.sql}
         </pre>
       </div>
@@ -405,7 +405,7 @@ function buildBentoItems(suggestions: AISuggestions): BentoItem[] {
   return items;
 }
 
-function getColSpan(item: BentoItem, index: number, total: number): string {
+function getColSpan(item: BentoItem, index: number): string {
   // First item is "featured" if it has rich content
   if (index === 0 && item.kind === "finding" && (item.data.sql || item.data.whatWeFound)) {
     return "md:col-span-2";
@@ -464,8 +464,14 @@ export default function InsightsPage() {
   });
 
   const err = (suggestions as { error?: string })?.error ?? (error as Error)?.message;
-  const togglePin = (id: string) =>
-    setPinned((p) => { const s = new Set(p); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const togglePin = (id: string) => {
+    setPinned((p) => {
+      const s = new Set(p);
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
+      return s;
+    });
+  };
 
   const bentoItems = suggestions && !err ? buildBentoItems(suggestions) : [];
   const queries = suggestions?.recommendedQueries ?? [];
@@ -475,13 +481,13 @@ export default function InsightsPage() {
     (suggestions?.recommendedDashboards?.length ?? 0);
 
   return (
-    <div className="flex flex-col h-full overflow-auto bg-[#faf8f5]">
+    <div className="flex flex-col h-full overflow-auto bg-muted/50">
       {/* Header */}
-      <div className="bg-white border-b border-[rgba(28,28,26,0.06)] px-8 py-6">
+      <div className="bg-white border-b border-border px-8 py-6">
         <div className="max-w-6xl mx-auto flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#1c1c1a]">Workspace Insights</h1>
-            <p className="text-sm text-[#8b7d76] mt-1 max-w-xl">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Workspace Insights</h1>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
               AI-driven recommendations derived from schema analysis and sample query patterns.
               No data was moved or stored outside of your environment.
             </p>
@@ -514,11 +520,11 @@ export default function InsightsPage() {
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-[#8a4b31] animate-pulse" />
+                <Sparkles className="w-6 h-6 text-primary animate-pulse" />
               </div>
               <div className="text-center">
-                <p className="font-medium text-[#1c1c1a]">Analyzing your database…</p>
-                <p className="text-sm text-[#8b7d76] mt-1">Profile some tables first for richer insights</p>
+                <p className="font-medium text-foreground">Analyzing your database…</p>
+                <p className="text-sm text-muted-foreground mt-1">Profile some tables first for richer insights</p>
               </div>
             </div>
           )}
@@ -531,10 +537,10 @@ export default function InsightsPage() {
               </div>
               <div>
                 <p className="font-medium text-sm">Could not generate insights</p>
-                <p className="text-xs text-[#8b7d76] mt-0.5">{err}</p>
-                <p className="text-xs text-[#8b7d76] mt-1">
+                <p className="text-xs text-muted-foreground mt-0.5">{err}</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   Make sure you have an OpenRouter API key configured in{" "}
-                  <Link href="/settings" className="text-[#8a4b31] underline">Settings</Link>{" "}
+                  <Link href="/settings" className="text-primary underline">Settings</Link>{" "}
                   and the schema has been loaded.
                 </p>
               </div>
@@ -545,14 +551,14 @@ export default function InsightsPage() {
             <>
               {/* DB type hypothesis banner */}
               {suggestions.databaseTypeHypotheses?.length > 0 && (
-                <div className="bg-white rounded-2xl border border-[rgba(28,28,26,0.06)] px-5 py-4 flex items-center gap-3 shadow-[0_2px_12px_-2px_rgba(28,28,26,0.06)]">
-                  <div className="w-8 h-8 rounded-lg bg-[#f5ede8] flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-4 h-4 text-[#8a4b31]" />
+                <div className="bg-white rounded-2xl border border-border px-5 py-4 flex items-center gap-3 shadow-[0_2px_12px_-2px_rgba(28,28,26,0.06)]">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-[#1c1c1a]">
+                    <p className="text-sm font-medium text-foreground">
                       Looks like a{" "}
-                      <span className="text-[#8a4b31]">{suggestions.databaseTypeHypotheses[0].label}</span>{" "}
+                      <span className="text-primary">{suggestions.databaseTypeHypotheses[0].label}</span>{" "}
                       database
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -563,7 +569,7 @@ export default function InsightsPage() {
                       ))}
                     </div>
                   </div>
-                  <p className="text-[11px] text-[#8b7d76]">
+                  <p className="text-[11px] text-muted-foreground">
                     {totalInsights} finding{totalInsights !== 1 ? "s" : ""} detected
                   </p>
                 </div>
@@ -573,7 +579,7 @@ export default function InsightsPage() {
               {bentoItems.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
                   {bentoItems.map((item, i) => {
-                    const colSpan = getColSpan(item, i, bentoItems.length);
+                    const colSpan = getColSpan(item, i);
                     if (item.kind === "finding") {
                       return (
                         <div key={item.data.id} className={colSpan}>
@@ -606,10 +612,10 @@ export default function InsightsPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-[#8b7d76]" />
+                    <Sparkles className="w-6 h-6 text-muted-foreground" />
                   </div>
-                  <p className="font-medium text-[#1c1c1a]">No insights yet</p>
-                  <p className="text-sm text-[#8b7d76]">Profile your tables to get AI-powered recommendations</p>
+                  <p className="font-medium text-foreground">No insights yet</p>
+                  <p className="text-sm text-muted-foreground">Profile your tables to get AI-powered recommendations</p>
                   <Button variant="outline" size="sm" className="mt-1" asChild>
                     <Link href="/explore">Explore Tables</Link>
                   </Button>
@@ -620,8 +626,8 @@ export default function InsightsPage() {
               {queries.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-sm font-semibold text-[#1c1c1a]">Suggested Queries</h2>
-                    <span className="text-[11px] bg-[#f0ece8] text-[#6b5f58] px-2 py-0.5 rounded-full font-medium">
+                    <h2 className="text-sm font-semibold text-foreground">Suggested Queries</h2>
+                    <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
                       {queries.length}
                     </span>
                   </div>
@@ -635,7 +641,7 @@ export default function InsightsPage() {
 
               {/* Footer */}
               {suggestions.generatedAt && (
-                <p className="text-[11px] text-[#8b7d76] pb-2">
+                <p className="text-[11px] text-muted-foreground pb-2">
                   Generated {new Date(suggestions.generatedAt).toLocaleString()} · {suggestions.modelUsed}
                 </p>
               )}

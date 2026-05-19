@@ -1,12 +1,9 @@
 import path from "path";
 import fs from "fs";
 import type { SchemaInfo, TableProfile, AISuggestions, Dashboard, SavedQuery } from "@/types";
+import { ensureDir } from "./fs-utils";
 
 const DATA_DIR = path.join(process.cwd(), "data");
-
-function ensureDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 
 function filePath(name: string) {
   return path.join(DATA_DIR, name);

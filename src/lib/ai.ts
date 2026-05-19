@@ -1,4 +1,5 @@
 import type { SchemaInfo, TableProfile, AISuggestions, SuggestedDashboard, DataQualityFinding, RecommendedQuery, ChartSpec, AIDashboardResponse, AITileResponse } from "@/types";
+import { callOpenRouter, getAIConfig } from "./ai-client";
 import { loadSettings } from "./settings";
 
 interface CompactTable {
@@ -126,48 +127,15 @@ export async function generateSuggestions(
   schema: SchemaInfo,
   profiles: TableProfile[]
 ): Promise<AISuggestions> {
-  const settings = loadSettings();
-  const apiKey = settings.connection?.openRouterApiKey;
-  if (!apiKey) throw new Error("OpenRouter API key not configured");
-
-  const model = settings.connection?.aiModel ?? "openai/gpt-4o-mini";
-  const allowSampleRows = settings.connection?.allowSampleRows ?? false;
+  const { model } = getAIConfig();
+  const allowSampleRows = loadSettings().connection?.allowSampleRows ?? false;
 
   const payload = buildPromptPayload(schema, profiles, allowSampleRows);
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3000",
-      "X-Title": "PG Insights",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Analyze this database schema and provide insights:\n\n${JSON.stringify(payload, null, 2)}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`OpenRouter error: ${response.status} ${err}`);
-  }
-
-  const data = await response.json() as {
-    choices: Array<{ message: { content: string } }>;
-    model: string;
-  };
-  const content = data.choices[0]?.message?.content;
-  if (!content) throw new Error("Empty response from AI");
+  const content = await callOpenRouter([
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: `Analyze this database schema and provide insights:\n\n${JSON.stringify(payload, null, 2)}` },
+  ]);
 
   const raw = JSON.parse(content) as {
     database_type_hypotheses: Array<{ label: string; confidence: number }>;
@@ -255,7 +223,7 @@ export async function generateSuggestions(
     dataQualityFindings,
     confidence: raw.confidence ?? 0.5,
     generatedAt: new Date().toISOString(),
-    modelUsed: data.model ?? model,
+    modelUsed: model,
   };
 }
 
@@ -263,46 +231,27 @@ export async function generateSQL(
   prompt: string,
   schema: SchemaInfo
 ): Promise<{ sql: string; explanation: string }> {
-  const settings = loadSettings();
-  const apiKey = settings.connection?.openRouterApiKey;
-  if (!apiKey) throw new Error("OpenRouter API key not configured");
-
-  const model = settings.connection?.aiModel ?? "openai/gpt-4o-mini";
-
   const tablesSummary = schema.tables
     .slice(0, 20)
     .map((t) => `${t.fullName}(${t.columns.map((c) => `${c.name}:${c.type}`).join(", ")})`)
     .join("\n");
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3000",
-      "X-Title": "PG Insights",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "system",
-          content: `You are a PostgreSQL expert. Generate safe, read-only SELECT SQL queries.
+  const content = await callOpenRouter(
+    [
+      {
+        role: "system",
+        content: `You are a PostgreSQL expert. Generate safe, read-only SELECT SQL queries.
 Always include LIMIT. Never use mutations. Return JSON: {"sql": string, "explanation": string}`,
-        },
-        {
-          role: "user",
-          content: `Schema:\n${tablesSummary}\n\nRequest: ${prompt}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    }),
-  });
+      },
+      {
+        role: "user",
+        content: `Schema:\n${tablesSummary}\n\nRequest: ${prompt}`,
+      },
+    ],
+    { temperature: 0.2 }
+  );
 
-  if (!response.ok) throw new Error(`OpenRouter error: ${response.status}`);
-  const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-  return JSON.parse(data.choices[0].message.content) as { sql: string; explanation: string };
+  return JSON.parse(content) as { sql: string; explanation: string };
 }
 
 const DASHBOARD_SYSTEM_PROMPT = `You are a PostgreSQL dashboard expert specializing in data visualization and business intelligence. Given a user request and database schema, generate a complete, production-ready dashboard with chart tiles.
@@ -369,11 +318,6 @@ export async function generateDashboardFromPrompt(
   schema: SchemaInfo,
   profiles: TableProfile[]
 ): Promise<AIDashboardResponse> {
-  const settings = loadSettings();
-  const apiKey = settings.connection?.openRouterApiKey;
-  if (!apiKey) throw new Error("OpenRouter API key not configured");
-
-  const model = settings.connection?.aiModel ?? "openai/gpt-4o-mini";
 
   const profileMap = new Map(profiles.map((p) => [p.tableName, p]));
 
@@ -402,38 +346,10 @@ export async function generateDashboardFromPrompt(
     to: `${r.to}.${r.toColumn}`,
   }));
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3000",
-      "X-Title": "PG Insights",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: DASHBOARD_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Create a dashboard for: "${prompt}"\n\nSchema:\nTables: ${JSON.stringify(tables, null, 2)}\nRelationships: ${JSON.stringify(relationships, null, 2)}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`OpenRouter error: ${response.status} ${err}`);
-  }
-
-  const data = await response.json() as {
-    choices: Array<{ message: { content: string } }>;
-  };
-  const content = data.choices[0]?.message?.content;
-  if (!content) throw new Error("Empty response from AI");
+  const content = await callOpenRouter([
+    { role: "system", content: DASHBOARD_SYSTEM_PROMPT },
+    { role: "user", content: `Create a dashboard for: "${prompt}"\n\nSchema:\nTables: ${JSON.stringify(tables, null, 2)}\nRelationships: ${JSON.stringify(relationships, null, 2)}` },
+  ]);
 
   const raw = JSON.parse(content) as {
     title: string;
@@ -537,11 +453,6 @@ export async function generateDestructivePlan(
   prompt: string,
   schema: SchemaInfo
 ): Promise<{ plan: import("@/types").DestructiveQueryPlan; explanation: string }> {
-  const settings = loadSettings();
-  const apiKey = settings.connection?.openRouterApiKey;
-  if (!apiKey) throw new Error("OpenRouter API key not configured");
-
-  const model = settings.connection?.aiModel ?? "openai/gpt-4o-mini";
 
   const tablesSummary = schema.tables
     .slice(0, 30)
@@ -553,34 +464,21 @@ export async function generateDestructivePlan(
     .map((r) => `${r.from}.${r.fromColumn} -> ${r.to}.${r.toColumn}`)
     .join("\n");
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3000",
-      "X-Title": "PG Insights",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "system",
-          content: DESTRUCTIVE_SYSTEM_PROMPT,
-        },
-        {
-          role: "user",
-          content: `Schema:\nTables: ${tablesSummary}\n\nForeign Keys:\n${foreignKeys}\n\nRequest: ${prompt}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    }),
-  });
+  const content = await callOpenRouter(
+    [
+      {
+        role: "system",
+        content: DESTRUCTIVE_SYSTEM_PROMPT,
+      },
+      {
+        role: "user",
+        content: `Schema:\nTables: ${tablesSummary}\n\nForeign Keys:\n${foreignKeys}\n\nRequest: ${prompt}`,
+      },
+    ],
+    { temperature: 0.2 }
+  );
 
-  if (!response.ok) throw new Error(`OpenRouter error: ${response.status}`);
-  const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-  const parsed = JSON.parse(data.choices[0].message.content) as {
+  const parsed = JSON.parse(content) as {
     title: string;
     description: string;
     steps: Array<{
@@ -618,11 +516,6 @@ export async function generateTileFromPrompt(
   schema: SchemaInfo,
   suggestedChartType?: string
 ): Promise<AITileResponse> {
-  const settings = loadSettings();
-  const apiKey = settings.connection?.openRouterApiKey;
-  if (!apiKey) throw new Error("OpenRouter API key not configured");
-
-  const model = settings.connection?.aiModel ?? "openai/gpt-4o-mini";
 
   const tablesSummary = schema.tables
     .slice(0, 20)
@@ -631,31 +524,15 @@ export async function generateTileFromPrompt(
 
   const chartTypeHint = suggestedChartType ? ` Suggested chart type: ${suggestedChartType}` : "";
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3000",
-      "X-Title": "PG Insights",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: TILE_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Schema:\n${tablesSummary}\n\nRequest: ${prompt}${chartTypeHint}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    }),
-  });
+  const content = await callOpenRouter(
+    [
+      { role: "system", content: TILE_SYSTEM_PROMPT },
+      { role: "user", content: `Schema:\n${tablesSummary}\n\nRequest: ${prompt}${chartTypeHint}` },
+    ],
+    { temperature: 0.2 }
+  );
 
-  if (!response.ok) throw new Error(`OpenRouter error: ${response.status}`);
-  const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-  const parsed = JSON.parse(data.choices[0].message.content) as {
+  const parsed = JSON.parse(content) as {
     title: string;
     sql: string;
     chartType: string;
