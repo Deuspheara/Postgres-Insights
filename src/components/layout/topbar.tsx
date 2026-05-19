@@ -1,18 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Search, Zap, Clock, HelpCircle, Database } from "lucide-react";
+import { Search, Zap, Clock, HelpCircle } from "lucide-react";
 import Link from "next/link";
+import { ConnectionSwitcher } from "@/components/layout/connection-switcher";
 
 export function Topbar() {
-  const { data: settings } = useQuery({
-    queryKey: ["settings"],
-    queryFn: () => fetch("/api/settings").then((r) => r.json()),
-    staleTime: 30_000,
-  });
-
-  const connected = !!settings?.connection;
-
   return (
     <header className="h-[52px] flex items-center px-4 gap-3 bg-background shrink-0">
       {/* App title */}
@@ -20,13 +12,8 @@ export function Topbar() {
         PG Insights
       </h1>
 
-      {/* Connection pill */}
-      {connected && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-[11px] font-medium text-muted-foreground shrink-0">
-          <Database className="w-3 h-3" />
-          <span>Connected</span>
-        </div>
-      )}
+      {/* Connection switcher */}
+      <ConnectionSwitcher />
 
       {/* Search bar */}
       <div className="flex-1 max-w-sm mx-auto">
@@ -46,9 +33,11 @@ export function Topbar() {
             <Zap className="w-4 h-4" />
           </button>
         </Link>
-        <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
-          <Clock className="w-4 h-4" />
-        </button>
+        <Link href="/query">
+          <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
+            <Clock className="w-4 h-4" />
+          </button>
+        </Link>
         <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
           <HelpCircle className="w-4 h-4" />
         </button>

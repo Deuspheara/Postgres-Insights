@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, XCircle, Loader2, Database, Key } from "lucide-react";
 import { toast } from "sonner";
+import { useActiveConnection } from "@/components/active-connection-provider";
 
 const AI_MODELS = [
   { value: "openai/gpt-4o-mini", label: "GPT-4o Mini (fast, cheap)" },
@@ -27,8 +28,11 @@ export default function SettingsPage() {
     queryKey: ["settings"],
     queryFn: () => fetch("/api/settings").then((r) => r.json()),
   });
+  const activeConnection = useActiveConnection();
 
+  const [name, setName] = useState("");
   const [connectionString, setConnectionString] = useState("");
+  const [color, setColor] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("openai/gpt-4o-mini");
   const [allowSampleRows, setAllowSampleRows] = useState(false);
@@ -36,29 +40,23 @@ export default function SettingsPage() {
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "ok" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
 
-  const isConfigured = settings?.connection !== null && settings?.connection !== undefined;
-  const hasApiKey = settings?.connection?.openRouterApiKey === "***configured***";
+  const isConfigured = !!activeConnection;
+  const hasApiKey = activeConnection?.openRouterApiKey === "***configured***";
 
-  // ── DB connection ──────────────────────────────────────────────────────────
-  const testAndSaveMutation = useMutation({
-    mutationFn: async (save: boolean) => {
+  const testMutation = useMutation({
+    mutationFn: async () => {
       setTestStatus("testing");
       const res = await fetch("/api/connect/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionString, safeMode, save }),
+        body: JSON.stringify({ connectionString }),
       });
       return res.json() as Promise<{ ok: boolean; error?: string; version?: string }>;
     },
-    onSuccess: (data, save) => {
+    onSuccess: (data) => {
       if (data.ok) {
         setTestStatus("ok");
         setTestMessage(data.version ?? "Connected");
-        if (save) {
-          qc.invalidateQueries({ queryKey: ["settings"] });
-          qc.invalidateQueries({ queryKey: ["schema"] });
-          toast.success("Connection saved");
-        }
       } else {
         setTestStatus("error");
         setTestMessage(data.error ?? "Connection failed");
@@ -70,7 +68,30 @@ export default function SettingsPage() {
     },
   });
 
-  // ── AI settings (independent save) ────────────────────────────────────────
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/connect/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, connectionString, color: color || undefined, safeMode, save: true }),
+      });
+      return res.json() as Promise<{ ok: boolean; error?: string; version?: string; saved?: boolean }>;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["settings"] });
+      qc.invalidateQueries({ queryKey: ["schema"] });
+      setName("");
+      setConnectionString("");
+      setColor("");
+      if (data.ok) {
+        toast.success("Connected and saved");
+      } else {
+        toast.warning("Saved but connection test failed — check your database is reachable");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const saveAiMutation = useMutation({
     mutationFn: () =>
       fetch("/api/settings", {
@@ -120,6 +141,16 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
+            <Label htmlFor="name">Connection Name</Label>
+            <Input
+              id="name"
+              placeholder="My Database"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setTestStatus("idle"); }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="cs">Connection String</Label>
             <Input
               id="cs"
@@ -133,21 +164,38 @@ export default function SettingsPage() {
             </p>
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="color">Color</Label>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-4 h-4 rounded shrink-0 border"
+                style={{ backgroundColor: color || "#8a4b31" }}
+              />
+              <Input
+                id="color"
+                placeholder="#8a4b31"
+                value={color}
+                onChange={(e) => { setColor(e.target.value); setTestStatus("idle"); }}
+              />
+            </div>
+          </div>
+
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               variant="outline"
               size="sm"
-              disabled={!connectionString || testAndSaveMutation.isPending}
-              onClick={() => testAndSaveMutation.mutate(false)}
+              disabled={!connectionString || testMutation.isPending}
+              onClick={() => testMutation.mutate()}
             >
-              {testAndSaveMutation.isPending && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              {testMutation.isPending && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
               Test
             </Button>
             <Button
               size="sm"
-              disabled={!connectionString || testAndSaveMutation.isPending}
-              onClick={() => testAndSaveMutation.mutate(true)}
+              disabled={!connectionString || saveMutation.isPending}
+              onClick={() => saveMutation.mutate()}
             >
+              {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
               Save & Connect
             </Button>
 
@@ -230,13 +278,13 @@ export default function SettingsPage() {
 
           <Button
             size="sm"
-            disabled={saveAiMutation.isPending || (!isConfigured)}
+            disabled={saveAiMutation.isPending || !settings?.activeConnectionId}
             onClick={() => saveAiMutation.mutate()}
           >
             {saveAiMutation.isPending && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
             Save AI Settings
           </Button>
-          {!isConfigured && (
+          {!settings?.activeConnectionId && (
             <p className="text-xs text-muted-foreground">Save a DB connection first.</p>
           )}
         </CardContent>

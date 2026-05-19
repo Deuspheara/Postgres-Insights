@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useActiveConnection } from "@/components/active-connection-provider";
 import { cn, timeAgo } from "@/lib/utils";
 
 export function StatusBar() {
@@ -12,8 +13,9 @@ export function StatusBar() {
 
   const queryClient = useQueryClient();
   const schema = queryClient.getQueryData<{ capturedAt?: string }>(["schema"]);
+  const activeConnection = useActiveConnection();
 
-  const connected = !!settings?.connection;
+  const connected = !!activeConnection;
   const safeMode = settings?.safetyConfig?.safeMode ?? true;
   const refreshed = schema?.capturedAt ? timeAgo(schema.capturedAt) : null;
 
@@ -27,7 +29,7 @@ export function StatusBar() {
           )}
         />
         <span>
-          {connected ? "Connected" : "Not connected"}
+          {connected ? activeConnection.name : "Not connected"}
           {refreshed && ` · Refreshed: ${refreshed}`}
           {" · "}AI Safe Mode: {safeMode ? "On" : "Off"}
         </span>

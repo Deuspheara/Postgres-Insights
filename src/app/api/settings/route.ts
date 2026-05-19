@@ -7,16 +7,13 @@ import { NextRequest } from "next/server";
 
 export async function GET() {
   const settings = loadSettings();
-  // Redact secrets
   const safe = {
     ...settings,
-    connection: settings.connection
-      ? {
-          ...settings.connection,
-          connectionString: settings.connection.connectionString ? SENTINEL_API_KEY : null,
-          openRouterApiKey: settings.connection.openRouterApiKey ? SENTINEL_API_KEY : undefined,
-        }
-      : null,
+    connections: settings.connections.map((c) => ({
+      ...c,
+      connectionString: c.connectionString ? SENTINEL_API_KEY : null,
+      openRouterApiKey: c.openRouterApiKey ? SENTINEL_API_KEY : undefined,
+    })),
   };
   return NextResponse.json(safe);
 }
@@ -44,6 +41,7 @@ const patchSchema = z.object({
       safeMode: z.boolean().optional(),
     })
     .optional(),
+  activeConnectionId: z.string().optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -53,8 +51,14 @@ export async function PATCH(req: NextRequest) {
     if (body.safetyConfig) {
       settings.safetyConfig = { ...settings.safetyConfig, ...body.safetyConfig };
     }
-    if (body.connection && settings.connection) {
-      settings.connection = { ...settings.connection, ...body.connection };
+    if (body.activeConnectionId) {
+      settings.activeConnectionId = body.activeConnectionId;
+    }
+    if (body.connection && settings.activeConnectionId) {
+      const idx = settings.connections.findIndex((c) => c.id === settings.activeConnectionId);
+      if (idx !== -1) {
+        settings.connections[idx] = { ...settings.connections[idx], ...body.connection };
+      }
     }
     saveSettings(settings);
     return NextResponse.json({ ok: true });

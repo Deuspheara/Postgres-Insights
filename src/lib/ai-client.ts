@@ -1,13 +1,13 @@
-import { loadSettings } from "@/lib/settings";
+import { getActiveConnection } from "@/lib/settings";
 import { DEFAULT_AI_MODEL, OPENROUTER_API_URL } from "@/lib/constants";
 
 export function getAIConfig() {
-  const settings = loadSettings();
-  const apiKey = settings.connection?.openRouterApiKey;
+  const conn = getActiveConnection();
+  const apiKey = conn?.openRouterApiKey;
   if (!apiKey) throw new Error("OpenRouter API key not configured");
   return {
     apiKey,
-    model: settings.connection?.aiModel ?? DEFAULT_AI_MODEL,
+    model: conn?.aiModel ?? DEFAULT_AI_MODEL,
   };
 }
 

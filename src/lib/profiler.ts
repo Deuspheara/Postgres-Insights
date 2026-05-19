@@ -10,7 +10,8 @@ export async function profileTable(
   schema: string,
   table: string,
   columns: ColumnInfo[],
-  estimatedRowCount: number
+  estimatedRowCount: number,
+  connectionId: string
 ): Promise<TableProfile> {
   const tableName = `"${schema}"."${table}"`;
   const usesSample = estimatedRowCount > SAMPLE_THRESHOLD;
@@ -107,6 +108,7 @@ export async function profileTable(
   });
 
   return {
+    connectionId,
     tableName: `${schema}.${table}`,
     rowCount: estimatedRowCount,
     columnProfiles,

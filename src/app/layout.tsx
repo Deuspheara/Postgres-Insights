@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { StatusBar } from "@/components/layout/status-bar";
 import { Providers } from "@/components/providers";
+import { ActiveConnectionProvider, ConnectionTransition } from "@/components/active-connection-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -28,20 +29,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <Providers>
-          <div className="flex h-screen overflow-hidden bg-background">
-            {/* Narrow icon-only sidebar */}
-            <Sidebar />
+          <ActiveConnectionProvider>
+            <div className="flex h-screen overflow-hidden bg-background">
+              {/* Narrow icon-only sidebar */}
+              <Sidebar />
 
-            {/* Right column: topbar + content + status bar */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-              <Topbar />
-              <main className="flex-1 overflow-auto bg-background">
-                {children}
-              </main>
-              <StatusBar />
+              {/* Right column: topbar + content + status bar */}
+              <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                <Topbar />
+                <ConnectionTransition>
+                  {children}
+                </ConnectionTransition>
+                <StatusBar />
+              </div>
             </div>
-          </div>
-          <Toaster />
+            <Toaster />
+          </ActiveConnectionProvider>
         </Providers>
       </body>
     </html>

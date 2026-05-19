@@ -2,8 +2,7 @@ import { Pool, PoolClient } from "pg";
 import { loadSettings } from "./settings";
 import { POOL_MAX, POOL_IDLE_TIMEOUT_MS, POOL_CONNECTION_TIMEOUT_MS } from "./constants";
 
-let _pool: Pool | null = null;
-let _connectionString: string | null = null;
+const pools = new Map<string, Pool>();
 
 function isRemoteHost(connectionString: string): boolean {
   try {
@@ -22,18 +21,29 @@ function poolOptions(connectionString: string) {
   };
 }
 
-export function getPool(): Pool {
+function resolveConnectionId(connectionId?: string): string {
   const settings = loadSettings();
-  const cs = settings.connection?.connectionString;
-  if (!cs) throw new Error("No database connection configured. Go to Settings to connect.");
+  const id = connectionId ?? settings.activeConnectionId;
+  if (!id) throw new Error("No active connection. Go to Settings to select one.");
+  return id;
+}
 
-  if (_pool && _connectionString === cs) return _pool;
+function resolveConnectionString(connectionId?: string): string {
+  const settings = loadSettings();
+  const id = resolveConnectionId(connectionId);
+  const conn = settings.connections.find((c) => c.id === id);
+  if (!conn) throw new Error(`Connection "${id}" not found.`);
+  return conn.connectionString;
+}
 
-  if (_pool) {
-    _pool.end().catch((err) => { console.warn("Pool shutdown warning:", (err as Error).message); });
-  }
+export function getPool(connectionId?: string): Pool {
+  const id = resolveConnectionId(connectionId);
+  const existing = pools.get(id);
+  if (existing) return existing;
 
-  _pool = new Pool({
+  const cs = resolveConnectionString(id);
+
+  const pool = new Pool({
     ...poolOptions(cs),
     max: POOL_MAX,
     idleTimeoutMillis: POOL_IDLE_TIMEOUT_MS,
@@ -41,12 +51,12 @@ export function getPool(): Pool {
     application_name: "pg-insights",
   });
 
-  _pool.on("error", (err) => {
+  pool.on("error", (err) => {
     console.error("Pool error:", err.message);
   });
 
-  _connectionString = cs;
-  return _pool;
+  pools.set(id, pool);
+  return pool;
 }
 
 export async function withClient<T>(
@@ -78,10 +88,10 @@ export async function testConnection(connectionString: string): Promise<{ ok: bo
   }
 }
 
-export function resetPool() {
-  if (_pool) {
-    _pool.end().catch((err) => { console.warn("Pool shutdown warning:", (err as Error).message); });
-    _pool = null;
-    _connectionString = null;
-  }
+export function resetPool(connectionId?: string) {
+  const settings = loadSettings();
+  const id = connectionId ?? settings.activeConnectionId;
+  if (!id || !pools.has(id)) return;
+  pools.get(id)!.end().catch((err) => { console.warn("Pool shutdown warning:", (err as Error).message); });
+  pools.delete(id);
 }

@@ -10,26 +10,29 @@ import { Progress } from "@/components/ui/progress";
 import { Database, RefreshCw, Code2, BarChart3, Key, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import type { SchemaInfo, TableProfile } from "@/types";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
 
 export default function TableDetailPage({ params }: { params: Promise<{ table: string }> }) {
   const { table } = use(params);
   const tableName = decodeURIComponent(table);
+  const connectionId = useActiveConnectionId();
 
   const { data: schema } = useQuery<SchemaInfo>({
-    queryKey: ["schema"],
+    queryKey: ["schema", connectionId],
     queryFn: () => fetch("/api/schema").then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
   const tableInfo = schema?.tables.find((t) => t.fullName === tableName);
 
   const { data: profile, isLoading: profileLoading, isError: profileError, error: profileErrorMsg, refetch: refetchProfile } = useQuery<TableProfile>({
-    queryKey: ["profile", tableName],
+    queryKey: ["profile", tableName, connectionId],
     queryFn: () => fetch(`/api/profile/${encodeURIComponent(tableName)}`).then(async (r) => {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error ?? "Failed to load profile");
       return data;
     }),
-    enabled: !!tableInfo,
+    enabled: !!connectionId && !!tableInfo,
   });
 
   if (!tableInfo) {

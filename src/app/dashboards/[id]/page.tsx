@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import {
   ArrowLeft,
   BarChart3,
   Sparkles,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { ChartTile } from "@/components/charts/chart-tile";
 import { AITileDialog } from "@/components/dashboards/ai-tile-dialog";
@@ -26,6 +28,15 @@ import type { Dashboard, DashboardTile, ChartType } from "@/types";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { CHART_TYPES, tileMinHeight } from "@/lib/chart-constants";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { exportElementAsPng, exportElementAsSvg } from "@/lib/export";
+import { toast } from "sonner";
 
 // ─── Add-tile dialog ──────────────────────────────────────────────────────────
 function AddTileDialog({
@@ -151,10 +162,13 @@ export default function DashboardDetailPage({
 }) {
   const { id } = use(params);
   const qc = useQueryClient();
+  const connectionId = useActiveConnectionId();
   const [addOpen, setAddOpen] = useState(false);
   const [aiTileOpen, setAiTileOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingTile, setEditingTile] = useState<DashboardTile | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const dashboardGridRef = useRef<HTMLDivElement>(null);
 
   const { data: dashboard, isLoading } = useQuery<Dashboard>({
     queryKey: ["dashboard", id],
@@ -170,7 +184,7 @@ export default function DashboardDetailPage({
       }).then((r) => r.json()),
     onSuccess: (data) => {
       qc.setQueryData(["dashboard", id], data);
-      qc.invalidateQueries({ queryKey: ["dashboards"] });
+      qc.invalidateQueries({ queryKey: ["dashboards", connectionId] });
     },
   });
 
@@ -281,6 +295,48 @@ export default function DashboardDetailPage({
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             Refresh
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8" disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-36">
+              <DropdownMenuItem
+                disabled={isExporting}
+                onClick={() => {
+                  if (!dashboardGridRef.current || isExporting) return;
+                  setIsExporting(true);
+                  toast("Exporting…");
+                  exportElementAsPng(dashboardGridRef.current, "dashboard")
+                    .then(() => toast.success("Exported as PNG"))
+                    .catch(() => toast.error("Export failed"))
+                    .finally(() => setIsExporting(false));
+                }}
+              >
+                Export as PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isExporting}
+                onClick={() => {
+                  if (!dashboardGridRef.current || isExporting) return;
+                  setIsExporting(true);
+                  toast("Exporting…");
+                  exportElementAsSvg(dashboardGridRef.current, "dashboard")
+                    .then(() => toast.success("Exported as SVG"))
+                    .catch(() => toast.error("Export failed"))
+                    .finally(() => setIsExporting(false));
+                }}
+              >
+                Export as SVG
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" className="h-8" onClick={() => setAiTileOpen(true)}>
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
             Add AI Tile
@@ -296,7 +352,7 @@ export default function DashboardDetailPage({
       <div className="h-px bg-[rgba(28,28,26,0.04)] shrink-0" />
 
       {/* Tile grid */}
-      <div className="flex-1 overflow-auto px-6 pb-8">
+      <div ref={dashboardGridRef} className="flex-1 overflow-auto px-6 pb-8">
         {dashboard.tiles.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-24">
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">

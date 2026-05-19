@@ -1,6 +1,6 @@
 import type { SchemaInfo, TableProfile, AISuggestions, SuggestedDashboard, DataQualityFinding, RecommendedQuery, ChartSpec, AIDashboardResponse, AITileResponse } from "@/types";
 import { callOpenRouter, getAIConfig } from "./ai-client";
-import { loadSettings } from "./settings";
+import { getActiveConnection } from "./settings";
 
 interface CompactTable {
   name: string;
@@ -125,10 +125,11 @@ Rules:
 
 export async function generateSuggestions(
   schema: SchemaInfo,
-  profiles: TableProfile[]
+  profiles: TableProfile[],
+  connectionId: string
 ): Promise<AISuggestions> {
   const { model } = getAIConfig();
-  const allowSampleRows = loadSettings().connection?.allowSampleRows ?? false;
+  const allowSampleRows = getActiveConnection()?.allowSampleRows ?? false;
 
   const payload = buildPromptPayload(schema, profiles, allowSampleRows);
 
@@ -206,6 +207,7 @@ export async function generateSuggestions(
   }));
 
   return {
+    connectionId,
     databaseTypeHypotheses: raw.database_type_hypotheses ?? [],
     candidateBusinessEntities: raw.candidate_business_entities ?? [],
     recommendedDashboards,

@@ -9,10 +9,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
-import { RefreshCw, AlertTriangle, Code2, TrendingUp, TrendingDown, Minus, Download, Edit2 } from "lucide-react";
+import { RefreshCw, AlertTriangle, Code2, TrendingUp, TrendingDown, Minus, Edit2 } from "lucide-react";
 import type { DashboardTile, QueryResult } from "@/types";
 import { useState, useRef, useEffect } from "react";
 import { cn, fmtNum } from "@/lib/utils";
+import { ExportButton } from "@/components/charts/export-button";
 
 // ─── Warm palette — hardcoded hex (CSS vars don't resolve inside SVG) ─────────
 const PALETTE = [
@@ -58,16 +59,6 @@ function calculateTrend(data: Record<string, unknown>[], valueKey: string): { tr
     isUp: trend > 0,
     isDown: trend < 0,
   };
-}
-
-function exportChartAsText(element: HTMLElement, filename: string) {
-  const text = element.innerText;
-  const blob = new Blob([text], { type: "text/plain" });
-  const link = document.createElement("a");
-  link.download = `${filename}.txt`;
-  link.href = URL.createObjectURL(blob);
-  link.click();
-  URL.revokeObjectURL(link.href);
 }
 
 // ─── Custom Tooltip ──────────────────────────────────────────────────────────
@@ -465,18 +456,12 @@ export function ChartTile({
   const isKpi = tile.chartType === "kpi";
   const isTable = tile.chartType === "table";
 
-  const handleExport = () => {
-    if (chartRef.current) {
-      exportChartAsText(chartRef.current, tile.title.replace(/\s+/g, "_"));
-    }
-  };
-
   const data = result ? coerce(result) : [];
   const valueKey = result?.fields[1]?.name;
   const trend = valueKey ? calculateTrend(data, valueKey) : null;
 
   return (
-    <div ref={chartRef} className="flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-[0_4px_20px_-2px_rgba(28,28,26,0.07)] group/tile">
+    <div ref={chartRef} className="flex flex-col h-full bg-card rounded-xl overflow-hidden shadow-[0_4px_20px_-2px_rgba(28,28,26,0.07)] group/tile">
       {/* Header */}
       <div className="flex items-start gap-2 px-4 pt-3.5 pb-2 shrink-0">
         <div className="flex-1 min-w-0">
@@ -525,13 +510,7 @@ export function ChartTile({
           >
             <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
           </button>
-          <button
-            onClick={handleExport}
-            title="Export"
-            className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </button>
+          <ExportButton elementRef={chartRef} baseName={tile.title} />
           {onEdit && (
             <button
               onClick={onEdit}

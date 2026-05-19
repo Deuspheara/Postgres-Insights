@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { SchemaInfo, TableInfo, SavedQuery } from "@/types";
+import type { SchemaInfo, TableInfo, SavedQuery, AppSettings } from "@/types";
 import { SENTINEL_API_KEY } from "@/types";
 import { cn, timeAgo, formatRows, ageInHours } from "@/lib/utils";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
 
 function TableCard({ table }: { table: TableInfo }) {
   return (
@@ -99,29 +100,34 @@ function KpiTile({
 }
 
 export default function HomePage() {
+  const connectionId = useActiveConnectionId();
+
   const { data: schema, isLoading: schemaLoading } = useQuery<SchemaInfo>({
-    queryKey: ["schema"],
+    queryKey: ["schema", connectionId],
     queryFn: () => fetch("/api/schema").then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
-  const { data: settings } = useQuery({
+  const { data: settings } = useQuery<AppSettings>({
     queryKey: ["settings"],
     queryFn: () => fetch("/api/settings").then((r) => r.json()),
   });
 
   const { data: savedQueries } = useQuery<SavedQuery[]>({
-    queryKey: ["saved-queries"],
+    queryKey: ["saved-queries", connectionId],
     queryFn: () => fetch("/api/saved-queries").then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
-  const isConnected = !!settings?.connection;
-  const hasAiKey = settings?.connection?.openRouterApiKey === SENTINEL_API_KEY;
+  const isConnected = !!connectionId;
+  const activeConnection = settings?.connections?.find((c) => c.id === connectionId);
+  const hasAiKey = activeConnection?.openRouterApiKey === SENTINEL_API_KEY;
   const safeMode = settings?.safetyConfig?.safeMode ?? true;
 
   // — No connection state —
   if (!settings) return null;
 
-  if (!isConnected) {
+  if (!isConnected || !settings?.connections?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-24 px-8">
         <div className="max-w-md text-center space-y-4">

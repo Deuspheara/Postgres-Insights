@@ -9,20 +9,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { AIGenerateDialog } from "@/components/dashboards/ai-generate-dialog";
 import { timeAgo } from "@/lib/utils";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
 
 export default function DashboardsPage() {
   const qc = useQueryClient();
+  const connectionId = useActiveConnectionId();
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   const { data: dashboards = [], isLoading } = useQuery<Dashboard[]>({
-    queryKey: ["dashboards"],
+    queryKey: ["dashboards", connectionId],
     queryFn: () => fetch("/api/dashboards").then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
       fetch(`/api/dashboards/${id}`, { method: "DELETE" }).then((r) => r.json()),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["dashboards"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dashboards", connectionId] }),
   });
 
   const createMutation = useMutation({
@@ -30,10 +33,10 @@ export default function DashboardsPage() {
       fetch("/api/dashboards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "New Dashboard", tiles: [] }),
+        body: JSON.stringify({ title: "New Dashboard", tiles: [], connectionId }),
       }).then((r) => r.json() as Promise<Dashboard>),
     onSuccess: (d) => {
-      qc.invalidateQueries({ queryKey: ["dashboards"] });
+      qc.invalidateQueries({ queryKey: ["dashboards", connectionId] });
       window.location.href = `/dashboards/${d.id}`;
     },
   });
@@ -46,6 +49,7 @@ export default function DashboardsPage() {
         body: JSON.stringify({
           title: aiDashboard.title,
           description: aiDashboard.description,
+          connectionId,
           tiles: aiDashboard.tiles.map((tile, i) => ({
             id: crypto.randomUUID(),
             title: tile.title,
@@ -59,7 +63,7 @@ export default function DashboardsPage() {
         }),
       }).then((r) => r.json() as Promise<Dashboard>),
     onSuccess: (d) => {
-      qc.invalidateQueries({ queryKey: ["dashboards"] });
+      qc.invalidateQueries({ queryKey: ["dashboards", connectionId] });
       window.location.href = `/dashboards/${d.id}`;
     },
   });

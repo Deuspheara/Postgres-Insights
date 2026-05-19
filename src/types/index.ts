@@ -1,12 +1,16 @@
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 export interface ConnectionConfig {
+  id: string;
+  name: string;
+  color?: string;
   connectionString: string;
   openRouterApiKey?: string;
   aiModel?: string;
   allowSampleRows?: boolean;
   privacyMode?: boolean;
   safeMode?: boolean;
+  lastConnectedAt?: string;
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -52,6 +56,7 @@ export interface ForeignKeyInfo {
 }
 
 export interface SchemaInfo {
+  connectionId: string;
   schemas: string[];
   tables: TableInfo[];
   relationships: RelationshipInfo[];
@@ -83,6 +88,7 @@ export interface ColumnProfile {
 }
 
 export interface TableProfile {
+  connectionId: string;
   tableName: string;
   rowCount: number;
   columnProfiles: ColumnProfile[];
@@ -113,6 +119,7 @@ export interface QueryResult {
 
 export interface SavedQuery {
   id: string;
+  connectionId: string;
   name: string;
   sql: string;
   description?: string;
@@ -153,6 +160,7 @@ export interface DashboardTile {
 
 export interface Dashboard {
   id: string;
+  connectionId: string;
   title: string;
   description?: string;
   tiles: DashboardTile[];
@@ -297,6 +305,7 @@ export interface DestructiveExecutionResult {
 }
 
 export interface AISuggestions {
+  connectionId: string;
   databaseTypeHypotheses: DatabaseTypeHypothesis[];
   candidateBusinessEntities: string[];
   recommendedDashboards: SuggestedDashboard[];
@@ -311,7 +320,8 @@ export interface AISuggestions {
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 export interface AppSettings {
-  connection: ConnectionConfig | null;
+  connections: ConnectionConfig[];
+  activeConnectionId: string | null;
   safetyConfig: SafetyConfig;
   lastConnectedAt?: string;
 }
@@ -341,3 +351,13 @@ export const DEFAULT_SAFETY_CONFIG: SafetyConfig = {
 };
 
 export const SENTINEL_API_KEY = "***configured***";
+
+export interface QueryHistoryEntry {
+  id: string;
+  sql: string;
+  executedAt: string;
+  durationMs: number;
+  rowCount: number;
+  error?: string;
+  label?: string;
+}

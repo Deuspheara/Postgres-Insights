@@ -1,7 +1,7 @@
 import { withClient } from "./db";
 import type { SchemaInfo, TableInfo, ColumnInfo, ForeignKeyInfo, IndexInfo, RelationshipInfo } from "@/types";
 
-export async function introspectSchema(): Promise<SchemaInfo> {
+export async function introspectSchema(connectionId: string): Promise<SchemaInfo> {
   return withClient(async (client) => {
     // Get all user schemas
     const schemaRes = await client.query<{ schema_name: string }>(`
@@ -203,6 +203,7 @@ export async function introspectSchema(): Promise<SchemaInfo> {
     });
 
     return {
+      connectionId,
       schemas,
       tables,
       relationships,

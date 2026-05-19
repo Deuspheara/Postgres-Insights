@@ -24,6 +24,7 @@ import type { AISuggestions, SuggestedDashboard, DataQualityFinding, Recommended
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
 
 // ─── Category config ──────────────────────────────────────────────────────────
 const CATEGORY_CONFIG = {
@@ -417,16 +418,18 @@ function getColSpan(item: BentoItem, index: number): string {
 export default function InsightsPage() {
   const router = useRouter();
   const qc = useQueryClient();
+  const connectionId = useActiveConnectionId();
   const [pinned, setPinned] = useState<Set<string>>(new Set());
 
   const { data: suggestions, isLoading, error } = useQuery<AISuggestions>({
-    queryKey: ["suggestions"],
+    queryKey: ["suggestions", connectionId],
     queryFn: () =>
       fetch("/api/ai/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       }).then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
   const refreshMutation = useMutation({
@@ -436,7 +439,7 @@ export default function InsightsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh: true }),
       }).then((r) => r.json()),
-    onSuccess: (data) => qc.setQueryData(["suggestions"], data),
+    onSuccess: (data) => qc.setQueryData(["suggestions", connectionId], data),
   });
 
   const buildDashboardMutation = useMutation({

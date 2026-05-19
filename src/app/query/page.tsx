@@ -9,16 +9,19 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ObjectViewer } from "@/components/ui/object-viewer";
 import { DestructionPreview } from "@/components/destructive/destruction-preview";
-import { Play, Save, Sparkles, Clock, AlertTriangle, BookOpen, Trash2, Shield, CheckCircle2, XCircle } from "lucide-react";
-import type { QueryResult, SavedQuery, DestructiveQueryPlan, DestructiveExecutionResult } from "@/types";
+import { Play, Save, Sparkles, Clock, AlertTriangle, BookOpen, Trash2, Shield, CheckCircle2, XCircle, Search } from "lucide-react";
+import type { QueryResult, SavedQuery, DestructiveQueryPlan, DestructiveExecutionResult, QueryHistoryEntry } from "@/types";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
+import { timeAgo } from "@/lib/utils";
 
 function QueryPageInner() {
   const searchParams = useSearchParams();
+  const connectionId = useActiveConnectionId();
   const tableParam = searchParams.get("table");
   const sqlParam = searchParams.get("sql");
   const defaultSql = sqlParam || (tableParam ? `SELECT *\nFROM ${tableParam}\nLIMIT 100;` : "SELECT * FROM ");
@@ -30,11 +33,14 @@ function QueryPageInner() {
   const [aiMode, setAiMode] = useState<"select" | "destructive">("select");
   const [destructivePlan, setDestructivePlan] = useState<DestructiveQueryPlan | null>(null);
   const [executionResult, setExecutionResult] = useState<DestructiveExecutionResult | null>(null);
+  const [sidebarTab, setSidebarTab] = useState("saved");
+  const [historyFilter, setHistoryFilter] = useState("");
   const qc = useQueryClient();
 
   const { data: savedQueries } = useQuery<SavedQuery[]>({
-    queryKey: ["saved-queries"],
+    queryKey: ["saved-queries", connectionId],
     queryFn: () => fetch("/api/saved-queries").then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
   const runMutation = useMutation<QueryResult, Error, string>({
@@ -44,6 +50,16 @@ function QueryPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql: s }),
       }).then((r) => r.json()),
+    onSuccess: (data, variables) => {
+      if (connectionId) {
+        historyMutation.mutate({
+          sql: variables,
+          durationMs: data.durationMs,
+          rowCount: data.rowCount,
+          error: data.error,
+        });
+      }
+    },
   });
 
   const explainMutation = useMutation({
@@ -87,9 +103,34 @@ function QueryPageInner() {
         body: JSON.stringify({ name, sql }),
       }).then((r) => r.json()),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["saved-queries"] });
+      qc.invalidateQueries({ queryKey: ["saved-queries", connectionId] });
       setSaveDialogOpen(false);
       setSaveName("");
+    },
+  });
+
+  const { data: history } = useQuery<QueryHistoryEntry[]>({
+    queryKey: ["query-history", connectionId],
+    queryFn: () => fetch("/api/query-history").then((r) => r.json()),
+    enabled: !!connectionId,
+  });
+
+  const historyMutation = useMutation({
+    mutationFn: (entry: { sql: string; durationMs: number; rowCount: number; error?: string }) =>
+      fetch("/api/query-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["query-history", connectionId] });
+    },
+  });
+
+  const clearHistoryMutation = useMutation({
+    mutationFn: () => fetch("/api/query-history", { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["query-history", connectionId] });
     },
   });
 
@@ -111,30 +152,113 @@ function QueryPageInner() {
 
   return (
     <div className="flex h-[calc(100vh-0px)] overflow-hidden">
-      {/* Sidebar: saved queries */}
-      <div className="w-52 border-r flex flex-col">
-        <div className="p-3 border-b">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saved Queries</p>
+      {/* Sidebar: saved queries + history */}
+      <Tabs value={sidebarTab} onValueChange={setSidebarTab} className="w-64 border-r flex flex-col">
+        <div className="p-2 border-b">
+          <TabsList className="w-full">
+            <TabsTrigger value="saved" className="text-xs flex-1"><BookOpen className="w-3 h-3 mr-1" />Saved</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs flex-1"><Clock className="w-3 h-3 mr-1" />History</TabsTrigger>
+          </TabsList>
         </div>
-        <ScrollArea className="flex-1">
-          {(!savedQueries || savedQueries.length === 0) ? (
-            <p className="p-3 text-xs text-muted-foreground">No saved queries yet.</p>
-          ) : (
-            <div className="py-1">
-              {savedQueries.map((q) => (
-                <button
-                  key={q.id}
-                  className="w-full text-left px-3 py-2 hover:bg-accent text-xs truncate"
-                  onClick={() => setSql(q.sql)}
-                >
-                  <BookOpen className="inline w-3 h-3 mr-1.5 text-muted-foreground" />
-                  {q.name}
-                </button>
-              ))}
+
+        <TabsContent value="saved" className="flex-1 flex flex-col data-[state=inactive]:hidden">
+          <ScrollArea className="flex-1">
+            {(!savedQueries || savedQueries.length === 0) ? (
+              <p className="p-3 text-xs text-muted-foreground">No saved queries yet.</p>
+            ) : (
+              <div className="py-1">
+                {savedQueries.map((q) => (
+                  <button
+                    key={q.id}
+                    className="w-full text-left px-3 py-2 hover:bg-accent text-xs truncate"
+                    onClick={() => setSql(q.sql)}
+                  >
+                    <BookOpen className="inline w-3 h-3 mr-1.5 text-muted-foreground" />
+                    {q.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="history" className="flex-1 flex flex-col data-[state=inactive]:hidden">
+          <div className="p-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+              <Input
+                className="h-7 text-xs pl-7"
+                placeholder="Filter history..."
+                value={historyFilter}
+                onChange={(e) => setHistoryFilter(e.target.value)}
+              />
+            </div>
+          </div>
+          <ScrollArea className="flex-1">
+            {(!history || history.length === 0) ? (
+              <p className="p-3 text-xs text-muted-foreground">No history yet.</p>
+            ) : (
+              <div className="py-1">
+                {(historyFilter
+                  ? history.filter((e) => e.sql.toLowerCase().includes(historyFilter.toLowerCase()))
+                  : history
+                ).map((entry) => {
+                  const durationBadge =
+                    entry.durationMs < 100
+                      ? "text-green-600"
+                      : entry.durationMs < 1000
+                      ? "text-yellow-600"
+                      : "text-red-600";
+                  return (
+                    <button
+                      key={entry.id}
+                      className="w-full text-left px-3 py-2 hover:bg-accent text-xs group"
+                      onClick={() => setSql(entry.sql)}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="truncate font-mono">{entry.sql.slice(0, 60)}{entry.sql.length > 60 ? "…" : ""}</span>
+                        <button
+                          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Re-run"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSql(entry.sql);
+                            setTimeout(() => runMutation.mutate(entry.sql), 0);
+                          }}
+                        >
+                          <Play className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                        <span>{timeAgo(entry.executedAt)}</span>
+                        <span className={durationBadge}>{entry.durationMs}ms</span>
+                        <span>{entry.rowCount.toLocaleString()} rows</span>
+                        {entry.error && (
+                          <span className="text-red-500 truncate">{entry.error}</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+          {history && history.length > 0 && (
+            <div className="p-2 border-t">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground hover:text-destructive"
+                onClick={() => clearHistoryMutation.mutate()}
+                disabled={clearHistoryMutation.isPending}
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Clear history
+              </Button>
             </div>
           )}
-        </ScrollArea>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Main area */}
       <div className="flex-1 flex flex-col">

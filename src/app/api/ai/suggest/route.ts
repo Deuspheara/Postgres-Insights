@@ -1,30 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateSuggestions } from "@/lib/ai";
-import { getCachedSchema, getCachedSuggestions, setCachedSuggestions } from "@/lib/cache";
+import { getCachedSchema, getCachedSuggestions, setCachedSuggestions, getCachedProfile } from "@/lib/cache";
+import { loadSettings } from "@/lib/settings";
 import { apiError } from "@/lib/api-utils";
 
+function getConnectionId() {
+  return loadSettings().activeConnectionId;
+}
+
 export async function POST(req: NextRequest) {
+  const connectionId = getConnectionId();
+  if (!connectionId) {
+    return NextResponse.json({ error: "No active connection." }, { status: 400 });
+  }
   const refresh = (await req.json().catch(() => ({}))).refresh === true;
 
   if (!refresh) {
-    const cached = getCachedSuggestions();
+    const cached = getCachedSuggestions(connectionId);
     if (cached) return NextResponse.json({ ...cached, fromCache: true });
   }
 
-  const schema = getCachedSchema();
+  const schema = getCachedSchema(connectionId);
   if (!schema) {
     return NextResponse.json({ error: "Schema not loaded. Fetch /api/schema first." }, { status: 400 });
   }
 
-  // Gather available profiles
-  const { getCachedProfile } = await import("@/lib/cache");
   const profiles = schema.tables
-    .map((t) => getCachedProfile(t.fullName))
-    .filter(Boolean) as Awaited<ReturnType<typeof getCachedProfile>>[];
+    .map((t) => getCachedProfile(connectionId, t.fullName))
+    .filter(Boolean);
 
   try {
-    const suggestions = await generateSuggestions(schema, profiles as never);
-    setCachedSuggestions(suggestions);
+    const suggestions = await generateSuggestions(schema, profiles as never, connectionId);
+    setCachedSuggestions(connectionId, suggestions);
     return NextResponse.json(suggestions);
   } catch (e: unknown) {
     return apiError(e);

@@ -9,22 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import type { SchemaInfo, TableInfo } from "@/types";
+import { useActiveConnectionId } from "@/components/active-connection-provider";
 
 export default function ExplorePage() {
   const qc = useQueryClient();
+  const connectionId = useActiveConnectionId();
   const [search, setSearch] = useState("");
   const [selectedSchema, setSelectedSchema] = useState<string>("all");
 
   const { data: schema, isLoading, isFetching } = useQuery<SchemaInfo>({
-    queryKey: ["schema"],
+    queryKey: ["schema", connectionId],
     queryFn: () => fetch("/api/schema").then((r) => r.json()),
+    enabled: !!connectionId,
   });
 
   const refresh = () => {
     fetch("/api/schema?refresh=true")
       .then((r) => r.json())
       .then((data) => {
-        qc.setQueryData(["schema"], data);
+        qc.setQueryData(["schema", connectionId], data);
       });
   };
 
