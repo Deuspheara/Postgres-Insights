@@ -20,7 +20,8 @@ import { Suspense } from "react";
 function QueryPageInner() {
   const searchParams = useSearchParams();
   const tableParam = searchParams.get("table");
-  const defaultSql = tableParam ? `SELECT *\nFROM ${tableParam}\nLIMIT 100;` : "SELECT * FROM ";
+  const sqlParam = searchParams.get("sql");
+  const defaultSql = sqlParam || (tableParam ? `SELECT *\nFROM ${tableParam}\nLIMIT 100;` : "SELECT * FROM ");
 
   const [sql, setSql] = useState(defaultSql);
   const [aiPrompt, setAiPrompt] = useState("");
