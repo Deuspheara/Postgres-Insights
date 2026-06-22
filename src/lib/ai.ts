@@ -256,6 +256,96 @@ Always include LIMIT. Never use mutations. Return JSON: {"sql": string, "explana
   return JSON.parse(content) as { sql: string; explanation: string };
 }
 
+export async function generateUpdateSQL(
+  prompt: string,
+  schema: SchemaInfo
+): Promise<{ sql: string; explanation: string }> {
+  const tablesSummary = schema.tables
+    .slice(0, 20)
+    .map((t) => `${t.fullName}(${t.columns.map((c) => `${c.name}:${c.type}`).join(", ")})`)
+    .join("\n");
+
+  const messages = [
+    {
+      role: "system" as const,
+      content: `You are a PostgreSQL expert. Generate a single careful UPDATE statement for the user's request.
+Return ONLY valid JSON: {"sql": string, "explanation": string}
+
+Rules:
+- Generate exactly one UPDATE statement, optionally preceded by SQL comments
+- Never return DELETE/INSERT/CREATE/DROP
+- The SQL must contain both UPDATE and SET
+- Use actual table and column names from the schema
+- Always include a specific WHERE clause; never update all rows unless the user explicitly asks for every row
+- Prefer simple, reviewable SQL the user can run directly
+- Keep the statement production-safe and easy to inspect before execution`,
+    },
+    {
+      role: "user" as const,
+      content: `Schema:\n${tablesSummary}\n\nRequest: ${prompt}`,
+    },
+  ];
+
+  const parseResult = (content: string) =>
+    JSON.parse(content) as { sql: string; explanation: string };
+
+  const stripLeadingComments = (sql: string) =>
+    sql
+      .replace(/^\s*--.*$/gm, "")
+      .replace(/^\s*\/\*[\s\S]*?\*\//g, "")
+      .trim();
+
+  const hasSingleStatement = (sql: string) => {
+    const normalized = stripLeadingComments(sql).replace(/;\s*$/, "");
+    return normalized.length > 0 && !normalized.includes(";");
+  };
+
+  const hasSpecificWhereClause = (sql: string) => {
+    const normalized = stripLeadingComments(sql);
+    const whereMatch = normalized.match(/\bWHERE\b([\s\S]*)$/i);
+    if (!whereMatch) return false;
+    const clause = whereMatch[1].trim();
+    if (!clause) return false;
+    if (/^(true|1=1)\s*$/i.test(clause)) return false;
+    return /(=|<>|!=|>|<|\bIN\b|\bLIKE\b|\bIS\b)/i.test(clause);
+  };
+
+  const isValidUpdateSql = (sql: string) => {
+    const normalized = stripLeadingComments(sql);
+    return (
+      /^UPDATE\b/i.test(normalized) &&
+      /\bSET\b/i.test(normalized) &&
+      !/\b(DELETE|INSERT|CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|COPY)\b/i.test(normalized) &&
+      hasSingleStatement(normalized) &&
+      hasSpecificWhereClause(normalized)
+    );
+  };
+
+  let parsed = parseResult(await callOpenRouter(messages, { temperature: 0.2 }));
+
+  if (!isValidUpdateSql(parsed.sql)) {
+    parsed = parseResult(
+      await callOpenRouter(
+        [
+          ...messages,
+          {
+            role: "user",
+            content:
+              "Your previous response was invalid because the sql field did not contain a complete UPDATE ... SET statement. Return corrected JSON only.",
+          },
+        ],
+        { temperature: 0 }
+      )
+    );
+  }
+
+  if (!isValidUpdateSql(parsed.sql)) {
+    throw new Error("AI could not generate a valid UPDATE statement.");
+  }
+
+  return parsed;
+}
+
 const DASHBOARD_SYSTEM_PROMPT = `You are a PostgreSQL dashboard expert specializing in data visualization and business intelligence. Given a user request and database schema, generate a complete, production-ready dashboard with chart tiles.
 
 Return ONLY valid JSON matching this exact schema:

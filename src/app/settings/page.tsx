@@ -43,6 +43,20 @@ export default function SettingsPage() {
   const isConfigured = !!activeConnection;
   const hasApiKey = activeConnection?.openRouterApiKey === "***configured***";
 
+  const safetyMutation = useMutation({
+    mutationFn: (writesEnabled: boolean) =>
+      fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ safetyConfig: { writesEnabled } }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Write access updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const testMutation = useMutation({
     mutationFn: async () => {
       setTestStatus("testing");
@@ -219,6 +233,18 @@ export default function SettingsPage() {
               <p className="text-xs text-muted-foreground">Limits concurrency, timeouts, and row counts</p>
             </div>
             <Switch id="safeMode" checked={safeMode} onCheckedChange={setSafeMode} />
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <Label htmlFor="writesEnabled" className="text-sm">Writes Enabled</Label>
+              <p className="text-xs text-muted-foreground">Allow INSERT, UPDATE, DELETE, and other write operations</p>
+            </div>
+            <Switch
+              id="writesEnabled"
+              checked={settings?.safetyConfig?.writesEnabled ?? false}
+              onCheckedChange={(v) => safetyMutation.mutate(v)}
+            />
           </div>
         </CardContent>
       </Card>

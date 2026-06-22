@@ -78,7 +78,11 @@ export async function runQuery(req: QueryRequest): Promise<QueryResult> {
   try {
     const result = await withClient(async (client) => {
       await client.query(`SET statement_timeout = ${timeout}`);
-      await client.query("SET transaction_read_only = on");
+      if (!safety.writesEnabled) {
+        await client.query("SET transaction_read_only = on");
+      } else {
+        await client.query("SET transaction_read_only = off");
+      }
 
       const res = await client.query({
         text: req.sql,

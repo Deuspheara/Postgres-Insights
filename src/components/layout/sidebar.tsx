@@ -16,77 +16,85 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/explore", label: "Explore", icon: Search },
-  { href: "/connections", label: "Connections", icon: Plug },
+  { href: "/connections", label: "Connect", icon: Plug },
   { href: "/query", label: "Query", icon: Code2 },
   { href: "/insights", label: "Insights", icon: Lightbulb },
-  { href: "/dashboards", label: "Dashboards", icon: BarChart3 },
+  { href: "/dashboards", label: "Boards", icon: BarChart3 },
 ];
+
+function SidebarItem({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex w-full flex-col items-center gap-1.5 rounded-xl px-1 py-2 transition-colors",
+        active ? "bg-white shadow-sm ring-1 ring-border/70" : "hover:bg-white/70",
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      <div
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+          active ? "bg-primary text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
+        )}
+      >
+        <Icon className="h-[17px] w-[17px]" />
+      </div>
+      <span
+        className={cn(
+          "text-[10px] font-medium leading-none",
+          active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+    </Link>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex flex-col w-[60px] bg-sidebar shrink-0 h-full">
-      <nav className="flex-1 flex flex-col items-center pt-3 pb-2 gap-0.5">
-        {NAV.map(({ href, label, icon: Icon }) => {
+    <aside className="flex h-full w-[72px] shrink-0 flex-col border-r border-border/60 bg-sidebar/70 px-2 py-3 backdrop-blur">
+      <div className="mb-3 flex justify-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[11px] font-semibold tracking-tight text-primary">
+          PG
+        </div>
+      </div>
+
+      <nav className="flex flex-1 flex-col items-center gap-1.5 overflow-y-auto">
+        {NAV.map(({ href, label, icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
-            <Link
+            <SidebarItem
               key={href}
               href={href}
-              className="flex flex-col items-center gap-1 w-full py-2 px-1"
-            >
-              <div
-                className={cn(
-                  "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
-                  active ? "bg-primary" : "hover:bg-accent"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "w-[18px] h-[18px] transition-colors",
-                    active ? "text-primary-foreground" : "text-muted-foreground"
-                  )}
-                />
-              </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium leading-none transition-colors",
-                  active ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                {label}
-              </span>
-            </Link>
+              label={label}
+              icon={icon}
+              active={active}
+            />
           );
         })}
       </nav>
 
-      {/* Settings pinned at bottom */}
-      <div className="flex flex-col items-center pb-3">
-        <Link href="/settings" className="flex flex-col items-center gap-1 w-full py-2 px-1">
-          <div
-            className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
-              pathname === "/settings" ? "bg-primary" : "hover:bg-accent"
-            )}
-          >
-            <Settings
-              className={cn(
-                "w-[18px] h-[18px] transition-colors",
-                pathname === "/settings" ? "text-primary-foreground" : "text-muted-foreground"
-              )}
-            />
-          </div>
-          <span
-            className={cn(
-              "text-[10px] font-medium leading-none transition-colors",
-              pathname === "/settings" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            Settings
-          </span>
-        </Link>
+      <div className="mt-3 border-t border-border/60 pt-3">
+        <SidebarItem
+          href="/settings"
+          label="Settings"
+          icon={Settings}
+          active={pathname === "/settings"}
+        />
       </div>
     </aside>
   );

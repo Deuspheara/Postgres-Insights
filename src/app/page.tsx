@@ -6,11 +6,13 @@ import {
   AlertTriangle,
   RefreshCw,
   Plus,
-  Sparkles,
-  ArrowRight,
   Clock,
+  Shield,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import type { SchemaInfo, TableInfo, SavedQuery, AppSettings } from "@/types";
 import { SENTINEL_API_KEY } from "@/types";
@@ -20,21 +22,45 @@ import { useActiveConnectionId } from "@/components/active-connection-provider";
 function TableCard({ table }: { table: TableInfo }) {
   return (
     <Link href={`/explore/${encodeURIComponent(table.fullName)}`}>
-      <div className="bg-card rounded-xl p-4 shadow-[0_4px_20px_-2px_rgba(28,28,26,0.06)] hover:shadow-[0_6px_24px_-2px_rgba(138,75,49,0.1)] transition-shadow cursor-pointer h-full">
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
-            <Database className="w-4 h-4 text-muted-foreground" />
+      <div className="rounded-xl border border-border/70 bg-card p-4 transition-shadow hover:shadow-[0_8px_28px_-18px_rgba(28,28,26,0.18)]">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <Database className="h-4 w-4" />
           </div>
-          <span className="text-[9px] font-semibold uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+          <Badge variant="outline" className="rounded-full text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {table.schema}
-          </span>
+          </Badge>
         </div>
-        <p className="text-[15px] font-bold text-foreground tracking-tight leading-snug">{table.name}</p>
-        <p className="text-[11px] text-muted-foreground mt-1">
+        <p className="text-sm font-semibold tracking-tight text-foreground">
+          {table.name}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
           {formatRows(table.estimatedRowCount)} rows · {table.columns.length} columns
         </p>
       </div>
     </Link>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card px-4 py-4">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+    </div>
   );
 }
 
@@ -49,52 +75,26 @@ interface HealthSignal {
 
 function HealthSignalRow({ signal }: { signal: HealthSignal }) {
   return (
-    <div className="flex items-start gap-3 bg-card rounded-xl px-4 py-3 shadow-[0_4px_20px_-2px_rgba(28,28,26,0.05)]">
+    <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-card px-4 py-3">
       <div
         className={cn(
-          "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-          signal.severity === "warning" ? "bg-amber-100 text-amber-600" : "bg-blue-50 text-blue-500"
+          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          signal.severity === "warning"
+            ? "bg-amber-100 text-amber-600"
+            : "bg-sky-100 text-sky-600",
         )}
       >
-        <AlertTriangle className="w-3.5 h-3.5" />
+        <AlertTriangle className="h-4 w-4" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground leading-snug">{signal.title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{signal.desc}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">{signal.title}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+          {signal.desc}
+        </p>
       </div>
-      <Link 
-        href={signal.href} 
-        className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-muted hover:bg-accent text-muted-foreground transition-colors"
-      >
-        {signal.action}
-      </Link>
-    </div>
-  );
-}
-
-function KpiTile({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-xl px-5 py-4 shadow-[0_4px_20px_-2px_rgba(28,28,26,0.05)]",
-        "bg-card"
-      )}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="text-3xl font-bold tracking-tight text-foreground mt-1.5">{value}</p>
-      {sub && <p className="text-[11px] text-primary mt-1 font-medium">{sub}</p>}
-      {/* Thin terracotta accent bar */}
-      <div className="h-0.5 bg-primary/20 rounded-full mt-3">
-        <div className="h-full bg-primary rounded-full" style={{ width: "38%" }} />
-      </div>
+      <Button asChild variant="ghost" size="sm" className="shrink-0">
+        <Link href={signal.href}>{signal.action}</Link>
+      </Button>
     </div>
   );
 }
@@ -124,22 +124,18 @@ export default function HomePage() {
   const hasAiKey = activeConnection?.openRouterApiKey === SENTINEL_API_KEY;
   const safeMode = settings?.safetyConfig?.safeMode ?? true;
 
-  // — No connection state —
   if (!settings) return null;
 
-  if (!isConnected || !settings?.connections?.length) {
+  if (!isConnected || !settings.connections.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-full py-24 px-8">
-        <div className="max-w-md text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Database className="w-8 h-8 text-primary" />
-            </div>
+      <div className="flex h-full items-center justify-center px-8 py-20">
+        <div className="max-w-md space-y-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Database className="h-8 w-8" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Connect your database</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            PG Insights is your AI-powered database copilot. Connect a PostgreSQL database to
-            explore your schema, profile your data, and get AI-generated insights.
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Add a PostgreSQL connection to explore schemas, run queries, and generate AI-powered insights.
           </p>
           <Button asChild size="lg" className="w-full">
             <Link href="/settings">Configure Connection</Link>
@@ -153,15 +149,17 @@ export default function HomePage() {
     ? [...schema.tables].sort((a, b) => b.estimatedRowCount - a.estimatedRowCount).slice(0, 3)
     : [];
 
-  const totalRows = schema?.tables.reduce((s, t) => s + t.estimatedRowCount, 0) ?? 0;
+  const totalRows =
+    schema?.tables.reduce((sum, table) => sum + table.estimatedRowCount, 0) ?? 0;
 
-  // Derive health signals
+  const recentQueries = savedQueries?.slice(0, 4) ?? [];
+
   const healthSignals: HealthSignal[] = [];
   if (!hasAiKey) {
     healthSignals.push({
       id: "no-ai",
       severity: "warning",
-      title: "AI Copilot not configured",
+      title: "AI copilot not configured",
       desc: "Add an OpenRouter API key in Settings to enable SQL generation and schema insights.",
       action: "Configure",
       href: "/settings",
@@ -171,8 +169,8 @@ export default function HomePage() {
     healthSignals.push({
       id: "no-schema",
       severity: "info",
-      title: "Schema not loaded",
-      desc: "Navigate to Explore to load your schema metadata.",
+      title: "Schema metadata not loaded",
+      desc: "Open Explore to refresh the schema snapshot and unlock table-level navigation.",
       action: "Explore",
       href: "/explore",
     });
@@ -182,182 +180,167 @@ export default function HomePage() {
       id: "stale-schema",
       severity: "info",
       title: "Schema cache is stale",
-      desc: `Schema was last refreshed ${timeAgo(schema.capturedAt)}. Go to Explore to refresh.`,
+      desc: `Last refresh was ${timeAgo(schema.capturedAt)}. Refresh the schema to keep insights current.`,
       action: "Refresh",
       href: "/explore",
-      });
+    });
   }
-
-  const recentQueries = savedQueries?.slice(0, 4) ?? [];
 
   return (
     <div className="h-full overflow-auto">
-      {/* ── Page header ───────────────────────────────────────────────── */}
-      <div className="px-8 pt-7 pb-5">
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-1.5">
-          Database Cluster
-        </p>
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <h1 className="text-[32px] font-bold tracking-tight leading-none">Workspace Overview</h1>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1 rounded-full bg-card shadow-[0_2px_8px_rgba(28,28,26,0.06)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              Active
-            </span>
-            {schema?.capturedAt && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1 rounded-full bg-card shadow-[0_2px_8px_rgba(28,28,26,0.06)] text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                Refreshed {timeAgo(schema.capturedAt)}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1 rounded-full bg-card shadow-[0_2px_8px_rgba(28,28,26,0.06)] text-muted-foreground">
-              Safe Mode: {safeMode ? "ON" : "OFF"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Main two-column grid ──────────────────────────────────────── */}
-      <div className="px-8 pb-6 grid grid-cols-[1fr_300px] gap-6">
-        {/* Left column */}
-        <div className="space-y-6 min-w-0">
-
-          {/* Recently Viewed Tables */}
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Database className="w-4 h-4 text-muted-foreground" />
-                Recently Viewed Tables
-              </h2>
-              <Link href="/explore" className="text-xs text-primary hover:underline font-medium">
-                View All
-              </Link>
-            </div>
-            {schemaLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Loading schema...
-              </div>
-            ) : topTables.length > 0 ? (
-              <div className="grid grid-cols-3 gap-3">
-                {topTables.map((t) => (
-                  <TableCard key={t.fullName} table={t} />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground shadow-[0_4px_20px_-2px_rgba(28,28,26,0.05)]">
-                No tables found. Refresh the schema in Explore.
-              </div>
-            )}
-          </section>
-
-          {/* Health Signals */}
-          {healthSignals.length > 0 && (
-            <section>
-              <h2 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                Health Signals
-              </h2>
-              <div className="space-y-2">
-                {healthSignals.map((s) => (
-                  <HealthSignalRow key={s.id} signal={s} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* KPI row */}
-          {schema && (
-            <div className="grid grid-cols-4 gap-3">
-              <KpiTile
-                label="Total Tables"
-                value={schema.tables.length.toString()}
-                sub={`${schema.schemas.length} schemas`}
-              />
-              <KpiTile
-                label="Relationships"
-                value={schema.relationships.length.toString()}
-                sub="Foreign keys"
-              />
-              <KpiTile
-                label="Est. Total Rows"
-                value={formatRows(totalRows)}
-                sub="Across all tables"
-              />
-              <div className="bg-card rounded-xl px-5 py-4 shadow-[0_4px_20px_-2px_rgba(28,28,26,0.05)] flex flex-col items-center justify-center gap-2 hover:shadow-[0_6px_24px_-2px_rgba(138,75,49,0.1)] transition-shadow cursor-pointer">
-                <Link href="/settings" className="flex flex-col items-center gap-1.5">
-                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-                    <Plus className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    New Connection
-                  </span>
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-4">
-          {/* Recent Queries */}
-          <div className="bg-card rounded-xl shadow-[0_4px_20px_-2px_rgba(28,28,26,0.06)] overflow-hidden">
-            <div className="px-4 pt-4 pb-3">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                Recent Queries
-              </h2>
-            </div>
-            <div className="divide-y divide-border/30">
-              {recentQueries.length === 0 ? (
-                <div className="px-4 pb-4 text-xs text-muted-foreground">
-                  No saved queries yet.{" "}
-                  <Link href="/query" className="text-primary hover:underline">Run one</Link>
-                </div>
-              ) : (
-                recentQueries.map((q) => (
-                  <Link key={q.id} href={`/query`}>
-                    <div className="px-4 py-2.5 hover:bg-muted/60 transition-colors">
-                      <p className="text-xs font-medium text-foreground truncate">{q.name}</p>
-                      <p className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate">
-                        {q.sql.slice(0, 48)}…
-                      </p>
-                    </div>
-                  </Link>
-                ))
+      <div className="mx-auto max-w-7xl px-8 py-7">
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="rounded-full text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                {activeConnection?.name ?? "Workspace"}
+              </Badge>
+              <Badge variant="outline" className="rounded-full text-[11px] text-muted-foreground">
+                <Shield className="mr-1 h-3 w-3" />
+                Safe mode {safeMode ? "on" : "off"}
+              </Badge>
+              {schema?.capturedAt && (
+                <Badge variant="outline" className="rounded-full text-[11px] text-muted-foreground">
+                  <Clock className="mr-1 h-3 w-3" />
+                  Refreshed {timeAgo(schema.capturedAt)}
+                </Badge>
               )}
             </div>
-            <div className="px-4 py-2.5">
-              <Link href="/query" className="text-[11px] text-primary hover:underline font-medium">
-                Open Query Editor →
-              </Link>
+            <div>
+              <h1 className="text-[32px] font-bold tracking-tight">Workspace Overview</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                A compact overview of your schema, activity, and the most important things to check next.
+              </p>
             </div>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/query">Open Query Editor</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/settings">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add Connection
+              </Link>
+            </Button>
+          </div>
+        </div>
 
-          {/* Smart Insights */}
-          <div
-            className="rounded-xl p-4 overflow-hidden"
-            style={{ background: "linear-gradient(145deg, #8a4b31, #6b3522)" }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-100">
-                Smart Insights
-              </h2>
-            </div>
-            <div className="space-y-0.5">
-              {[
-                { label: "Profile null rates in top tables", href: "/insights" },
-                { label: "Detect missing indexes", href: "/insights" },
-                { label: "Generate join suggestions", href: "/insights" },
-              ].map((item) => (
-                <Link key={item.label} href={item.href}>
-                  <div className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-white/10 transition-colors group">
-                    <span className="text-[13px] text-amber-50 font-medium leading-snug">{item.label}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </Link>
-              ))}
-            </div>
+        {schema && (
+          <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Tables"
+              value={schema.tables.length.toString()}
+              sub={`${schema.schemas.length} schemas`}
+            />
+            <StatCard
+              label="Relationships"
+              value={schema.relationships.length.toString()}
+              sub="Foreign keys detected"
+            />
+            <StatCard
+              label="Estimated rows"
+              value={formatRows(totalRows)}
+              sub="Across visible tables"
+            />
+            <StatCard
+              label="AI readiness"
+              value={hasAiKey ? "Ready" : "Setup"}
+              sub={hasAiKey ? "Copilot configured" : "API key missing"}
+            />
+          </div>
+        )}
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-6">
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Top tables</h2>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/explore">View all</Link>
+                </Button>
+              </div>
+              {schemaLoading ? (
+                <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading schema...
+                </div>
+              ) : topTables.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-3">
+                  {topTables.map((table) => (
+                    <TableCard key={table.fullName} table={table} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border/70 bg-card p-6 text-sm text-muted-foreground">
+                  No tables found. Refresh the schema in Explore.
+                </div>
+              )}
+            </section>
+
+            {healthSignals.length > 0 && (
+              <section>
+                <h2 className="mb-3 text-sm font-semibold">Health signals</h2>
+                <div className="space-y-2">
+                  {healthSignals.map((signal) => (
+                    <HealthSignalRow key={signal.id} signal={signal} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">Recent queries</h2>
+                  <Badge variant="outline" className="rounded-full text-[11px]">
+                    {recentQueries.length}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  {recentQueries.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
+                      No recent queries yet.
+                    </div>
+                  ) : (
+                    recentQueries.map((query) => (
+                      <Link key={query.id} href="/query">
+                        <div className="rounded-lg border border-border/70 p-3 transition-colors hover:bg-muted/40">
+                          <p className="truncate text-xs font-medium text-foreground">
+                            {query.name}
+                          </p>
+                          <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                            {query.sql.slice(0, 56)}…
+                          </p>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Recommended next steps</h2>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <Link href="/explore" className="block rounded-lg border border-border/70 p-3 hover:bg-muted/40">
+                    Review large tables and missing keys
+                  </Link>
+                  <Link href="/insights" className="block rounded-lg border border-border/70 p-3 hover:bg-muted/40">
+                    Open AI insight stream
+                  </Link>
+                  <Link href="/query" className="block rounded-lg border border-border/70 p-3 hover:bg-muted/40">
+                    Start a query or generate one with AI
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

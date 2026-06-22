@@ -43,6 +43,12 @@ yarn-error.log*
 
 # local app data (db credentials, cached schemas, dashboards)
 /data/
+/device_db.sqlite
+
+# local tool caches / agent artifacts
+/.agents/
+/.pnpm-store/
+/skills-lock.json
 
 # typescript
 *.tsbuildinfo
